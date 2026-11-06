@@ -1,0 +1,6 @@
+keywords: {slap: 3, strike: 2, gasp: 1.5, reveal: 2, kneel: 1.5, kiss: 2, blood: 2, pregnant: 3, divorce: 3, dead: 2, "who are you": 2, cliffhanger: 3, "cut to black": 2, freeze: 1.5}
+emotion_intensity: {furious: 2, shocked: 2, trembling: 1.5, cold: 1, commanding: 1, desperate: 1.5, screaming: 2, sobbing: 1.5, venomous: 2, unforgiving: 1}
+sfx_cues: {swell: 2, sting: 2, silence: 1.5, drone: 1, peak: 1.5}
+position: {episode_end_window_s: 10.0, episode_end: 2, scene_boundary: 1, question: 0.5, exclamation: 0.5}
+density: {window_s: 10.0, lines_for_max: 5, max_points: 2}
+visual_terms: [slap, strike, grab, collapse, kneel, kiss, tears, reveal, "close-up on", push-in, freeze, smash]
