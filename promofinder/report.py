@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from promofinder.config import AppConfig
 from promofinder.invariants import pass_rate
+from promofinder.quality import risk_notes, run_notes
 from promofinder.meta import RunMeta
 from promofinder.models import Candidate, Promo
 from promofinder.parse import health_report
@@ -13,14 +14,14 @@ from promofinder.timeutil import format_ts
 
 CSV_COLUMNS = ["rank", "cand_id", "kind", "segments", "duration_s", "hook", "cliffhanger", "why_it_works",
                "post_first_because", "final_score", "elo", "hook_score", "cliff_score", "standalone",
-               "story_importance", "rule_score", "hook3s", "flags", "editor_verdict", "editor_note"]
+               "story_importance", "rule_score", "hook3s", "flags", "risks", "editor_verdict", "editor_note"]
 
 
 def segments_str(c: Candidate) -> str:
     return "; ".join(f"E{s.ep:02d} {format_ts(s.start_s)}–{format_ts(s.end_s)}" for s in c.segments)
 
 
-def _row(p: Promo) -> dict:
+def _row(p: Promo, risks: list[str] | None = None) -> dict:
     c, j = p.candidate, p.judgement
     return {"rank": p.rank, "cand_id": c.cand_id, "kind": c.kind, "segments": segments_str(c),
             "duration_s": round(c.duration_s, 2), "hook": j.hook_text if j else "", "cliffhanger": j.cliffhanger_text if j else "",
@@ -28,7 +29,7 @@ def _row(p: Promo) -> dict:
             "final_score": round(p.final_score, 3), "elo": "" if p.elo is None else round(p.elo, 1),
             "hook_score": c.hook_score, "cliff_score": c.cliff_score, "standalone": j.standalone if j else "",
             "story_importance": c.story_importance, "rule_score": c.rule_score,
-            "hook3s": "" if not j or j.hook3s is None else j.hook3s, "flags": "|".join(p.flags),
+            "hook3s": "" if not j or j.hook3s is None else j.hook3s, "flags": "|".join(p.flags), "risks": " | ".join(risks or []),
             "editor_verdict": "", "editor_note": ""}
 
 
@@ -41,11 +42,12 @@ def write_outputs(out_dir: Path, promos: list[Promo], episodes, tags, read: Read
         d["duration_s"] = round(p.candidate.duration_s, 2)
         data.append(d)
     (out_dir / "promos.json").write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    risks = [risk_notes(p, promos[:i], episodes) for i, p in enumerate(promos)]
     with open(out_dir / "promos.csv", "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
         w.writeheader()
-        for p in promos:
-            w.writerow(_row(p))
+        for i, p in enumerate(promos):
+            w.writerow(_row(p, risks[i]))
     rate, bad = pass_rate(promos, episodes, tags, cfg.scoring)
     summ = meta.summary()
     models = sorted({c["model"] for c in meta.calls})
@@ -56,8 +58,12 @@ def write_outputs(out_dir: Path, promos: list[Promo], episodes, tags, read: Read
           f"Invariant pass rate: {round(rate * 100)}%"]
     for cid, v in bad.items():
         md.append(f"- {cid}: {', '.join(v)}")
+    md += ["", "## Where it may be picking badly", "", "Run-level caveats:"] + [f"- {n}" for n in run_notes(meta)]
+    md += ["", "Top 20, automatic risk notes (spec §8.5 categories; an editor still makes the call):"]
+    for p, r in list(zip(promos, risks))[:20]:
+        md.append(f"- #{p.rank} {segments_str(p.candidate)}: " + ("; ".join(r) if r else "no automatic risk found"))
     md += ["", "## Ranked promos", ""]
-    for p in promos:
+    for p, r in zip(promos, risks):
         c, j = p.candidate, p.judgement
         md.append(f"### #{p.rank} — {segments_str(c)} ({c.duration_s:.1f} s)")
         if j:
@@ -72,6 +78,8 @@ def write_outputs(out_dir: Path, promos: list[Promo], episodes, tags, read: Read
         md.append(f"- Scores: {scores}")
         if p.flags:
             md.append(f"- Flags: {', '.join(p.flags)}")
+        if r:
+            md.append(f"- Risks: {'; '.join(r)}")
         if p.original_segments:
             md.append(f"- Refined from: {'; '.join(f'E{s.ep:02d} {format_ts(s.start_s)}–{format_ts(s.end_s)}' for s in p.original_segments)}")
         md.append("")

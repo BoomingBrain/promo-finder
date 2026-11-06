@@ -41,3 +41,14 @@ def test_outputs(tmp_path):
     md = (tmp_path / "report.md").read_text()
     assert "Invariant pass rate: 100%" in md
     assert "prompt_versions" in json.loads((tmp_path / "run_meta.json").read_text())["values"]
+
+
+def test_report_has_picking_badly_section(tmp_path):
+    a, b = P(4.0, 30.0), P(9.0, 30.0)
+    b.candidate = b.candidate.model_copy(update={"cand_id": "S-dup"}); b.rank = 2
+    write_outputs(tmp_path, [a, b], EPS, {}, READ, RunMeta(), CFG)
+    md = (tmp_path / "report.md").read_text()
+    assert "## Where it may be picking badly" in md and "near-duplicate of #1" in md and "visual-only hook" in md
+    assert md.index("## Where it may be picking badly") < md.index("## Ranked promos")
+    row = list(csv.DictReader(open(tmp_path / "promos.csv", encoding="utf-8")))[1]
+    assert "near-duplicate" in row["risks"]
