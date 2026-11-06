@@ -35,6 +35,11 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--dry-run", action="store_true", help="parse and estimate calls/tokens; no model calls")
     r.add_argument("--fresh", action="store_true", help="ignore saved stage outputs and recompute")
     r.add_argument("--force", action="store_true", help="continue even if parse health check fails")
+    e = sub.add_parser("eval", help="score a run against the gold set")
+    e.add_argument("--run", required=True, type=Path, help="run output folder")
+    e.add_argument("--gold", default=Path("eval/gold.yaml"), type=Path)
+    e.add_argument("--compare", type=Path, help="another run folder, for top-10 overlap")
+    e.add_argument("--config", default=Path("config"), type=Path)
     return ap
 
 
@@ -59,5 +64,15 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Reader error: {e}", file=sys.stderr)
             return 2
         print(f"Done. Outputs in {out}" if not opts.dry_run else f"(dry run; parse outputs in {out})")
+        return 0
+    if args.cmd == "eval":
+        from promofinder.evaluate import evaluate
+        r = evaluate(args.run, args.gold, args.compare, args.config)
+        for k, v in r.items():
+            if k != "gold_detail":
+                print(f"{k:<28}{v}")
+        print("gold picks (best rank of a promo covering >= 50%):")
+        for gid, d in r["gold_detail"].items():
+            print(f"  {gid:<6} rank {d['best_rank'] if d['best_rank'] is not None else 'missed':<8} overlap {d['overlap']:.0%}")
         return 0
     return 1
