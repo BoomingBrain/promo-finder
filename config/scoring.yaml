@@ -4,7 +4,7 @@ window_weights: {hook: 0.4, cliff: 0.4, rules: 0.1, length_fit: 0.1}
 penalties: {mid_line_cut: 2.0, scene_jump: 1.0, camera_heavy: 1.0, camera_heavy_ratio: 0.4}
 nms_overlap: 0.5
 k_per_episode: 3
-judge_top_n: 30
+judge_top_n: 100   # was 30; the cut was arbitrary under score inflation (ai-log #5)
 finalists_n: 15
 final_weights: {hook: 0.30, cliff: 0.30, standalone: 0.25, story_importance: 0.05, rules: 0.10}
 flags: {spoiler_major: 1.5, resolution_leak: 3.0, hook3s_low: 1.0}
