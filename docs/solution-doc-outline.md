@@ -29,16 +29,22 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
   5. picks between code-built alternative cuts
   6. compares finalists head-to-head ("which would you post first?") with Elo
 - **Human:** the editor marks ✓/✗ in `promos.csv`. Those marks become prompt examples and small weight nudges, and they are scored separately from the gold set.
-- **Models:** any OpenAI-compatible endpoint works through `config/models.yaml`, with a fallback chain per stage. This build used NVIDIA's free `nemotron-3-ultra-550b-a55b`, plus `nemotron-3.5-lightning-30b-a3b` for the 3-second test.
+- **Models:** any OpenAI-compatible endpoint works through `config/models.yaml`, with a fallback chain per stage.
+  - The final run uses NVIDIA's free `nemotron-3-ultra-550b-a55b` for the show summary and tagging.
+  - It uses `z-ai/glm-5.3-flash` for judging, the 3-second test, cut choice and head-to-head. GLM was chosen by a both-orders consistency test against DeepSeek and Mistral Large 4.
+  - A rate limit waits and retries the same model; it never downgrades.
 
 ## 4. Scale and cost
 - **First full run** (no show summary, no head-to-head ranking, judge capped at 30):
   - 112 calls, about 373k tokens
   - about 14 min wall time: tagging 672 s, judge 145 s
 - **M2 run** (+ show summary, calibration examples, judge every candidate): 235 calls, about 569k tokens, tagging 604 s + judging 351 s.
-- **Final 3-vote run** (all 10 stages): 427 calls (324 live), about 1.86M tokens, 41 min 42 s wall time.
+- **3-vote run** (all 10 stages): 427 calls (324 live), about 1.86M tokens, 41 min 42 s wall time.
   - The free tier struggled at 3× volume: 36 of 150 tagging calls failed outright, 84 calls fell back to the second model and 95 replies needed a JSON retry.
   - Token use was about 2× the dry-run estimate because of the retries.
+- **Final run** (1 vote, all 10 stages): 307 calls (255 live), about 401k tokens, 48 min 51 s wall time.
+  - 0 failed calls and 1 rate-limit wait.
+  - Judging is the slow part: GLM took about 37 min for 94 clips.
 - **Per new show:** the same command runs unchanged, it resumes after a crash, and responses are cached.
 
 ## 5. How I know it's good, and where it fails
@@ -49,12 +55,16 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 | Baseline (stages 1,2,4,5,7,10) | **1/12** | 9/12 | 100% | tagger scores inflated, judge cut at 30 |
 | M2 (+ show summary, calibration examples, judge all) | **3/12** | 8/12 | 98.9% | 1 mid-line cut found → bug fixed (ai-log #10) |
 | M3 (+ stitch, refine, debiased pairwise, cut fix) | **3/12** | 8/12 | 100% | branding-iron pick reached #1; pairwise agreed with itself 21% |
-| Final (3 votes, all stages) | **3/12** (#1, #5, #9) | 6/12 | 100% | vote agreement 50%; pairwise agreed with itself 14–25%; precision@10 from editor ✓/✗: ⟨PENDING: user marks⟩ |
+| 3 votes, all stages (mixed models under rate limits) | **3/12** (#1, #5, #9) | 6/12 | 100% | vote agreement 50%; pairwise agreed with itself 14–25%; the small fallback model answered 37–50% of calls |
+| **Final: 1 vote, Ultra tags, GLM-5.3-flash judges, no downgrade on 429** | **4/12** (#1, #5, #8, #20) | 8/12 | 100% | pairwise agreed with itself **79%**, first-shown won 39%; 0 failed calls; precision@10 from editor ✓/✗: ⟨PENDING: user marks⟩ |
 
 - **Where it fails:** this comes from real evidence, not guesses. `report.md` now flags these automatically for the top 20.
   - **Ranking, not finding, was the first bottleneck.** In the baseline, 9/12 gold moments were candidates but only 1 made the top 20. Calibration examples and judging every candidate took it to 3/12.
-  - **Tagging is noisy.** The 3 votes agreed on only 50% of tagged moments. Majority voting then *shrank* the pool (6/12 gold moments vs 8–9/12 with 1 vote), so 3 votes did not beat 1 vote on recall.
-  - **Head-to-head ranking is mostly position bias with these models.** It picked the first-shown clip 86–93% of the time. Asking both orders turns those into draws, so it now does no harm, but it adds little.
+  - **Tagging is noisy.** The 3 votes agreed on only 50% of tagged moments, partly because a third of the votes came from the small fallback model. Majority voting then *shrank* the pool (6/12 gold moments vs 8/12 with 1 vote), so 3 votes did not beat 1 vote on recall, and the final run uses 1.
+  - **Model choice matters more than model size.** In earlier runs the head-to-head stage looked useless: it picked the first-shown clip 86–93% of the time.
+    - The real cause was rate limits quietly pushing half the calls onto a small backup model.
+    - With the client fixed to wait instead of downgrading, and GLM-5.3-flash judging, it agreed with itself 79% of the time with no position bias.
+    - In a 10-pair test the 1T-parameter Mistral Large 4 was *worse* (5/10) than the 'flash' GLM (9/10).
   - **Cuts that are close but too long.** G02 and G10 are covered at 45–48%: the tool's clip starts or ends a few shots away from the editor's, so it falls just short of the 50% rule.
   - **Visual-only hooks.** 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
   - **Missed scenes.** Some strong moments never became candidates at all (G03, G04, G06). With only 3 clips per episode, a talky set-up beat can crowd them out.
