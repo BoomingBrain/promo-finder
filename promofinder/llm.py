@@ -29,6 +29,10 @@ class ModelNotFound(Exception):
     """Model id unknown or not available to this key."""
 
 
+class ModelRejected(Exception):
+    """Any other 4xx (bad request, auth, forbidden): this model can't answer this call; try the next one."""
+
+
 class LLMStageError(Exception):
     """Every model in a stage's chain failed."""
 
@@ -53,7 +57,7 @@ def openai_transport(base_url: str, api_key: str, timeout_s: float) -> Transport
                 raise ModelNotFound(f"{model}: {e}") from e
             if e.status_code >= 500 or e.status_code == 429:
                 raise TransientError(str(e)) from e
-            raise
+            raise ModelRejected(f"{model}: HTTP {e.status_code}: {str(e)[:300]}") from e
         msg = r.choices[0].message if r.choices else None
         text = (msg.content or "") if msg else ""
         if not text.strip() and msg is not None:
@@ -118,6 +122,16 @@ class LLMClient:
         h = hashlib.sha256(json.dumps([model, msgs, temperature, vote_index], ensure_ascii=False).encode()).hexdigest()
         return self.cache_dir / f"{h}.json"
 
+    @staticmethod
+    def _read_cache(path: Path) -> Completion | None:
+        if not path.exists():
+            return None
+        try:
+            d = json.loads(path.read_text(encoding="utf-8"))
+            return Completion(d["text"], d["prompt_tokens"], d["completion_tokens"])
+        except (ValueError, KeyError, TypeError):
+            return None                                   # truncated/corrupt entry: treat as a miss and overwrite
+
     def _call(self, stage, model, msgs, temperature, fallback) -> Completion:
         """Call with retries on TransientError. Raises TransientError/ModelNotFound when exhausted."""
         for k in range(self.cfg.max_retries + 1):
@@ -144,9 +158,8 @@ class LLMClient:
             try:
                 for attempt in (1, 2):
                     path = self._key(model, msgs, temp, vote_index)
-                    if path.exists():
-                        d = json.loads(path.read_text(encoding="utf-8"))
-                        comp = Completion(d["text"], d["prompt_tokens"], d["completion_tokens"])
+                    comp = self._read_cache(path)
+                    if comp is not None:
                         self.meta.record_call(stage, model, comp.prompt_tokens, comp.completion_tokens, 0.0, True, i > 0)
                     else:
                         comp = self._call(stage, model, msgs, temp, i > 0)
@@ -158,12 +171,14 @@ class LLMClient:
                                        {"role": "user", "content": f"Your reply was invalid: {str(e)[:500]}. "
                                         "Reply with only valid JSON matching the schema."}]
                         continue
-                    if not path.exists():
-                        path.write_text(json.dumps({"text": comp.text, "prompt_tokens": comp.prompt_tokens,
-                                                    "completion_tokens": comp.completion_tokens}, ensure_ascii=False),
-                                        encoding="utf-8")
+                    if self._read_cache(path) is None:
+                        tmp = path.with_suffix(f".{threading.get_ident()}.tmp")
+                        tmp.write_text(json.dumps({"text": comp.text, "prompt_tokens": comp.prompt_tokens,
+                                                   "completion_tokens": comp.completion_tokens}, ensure_ascii=False),
+                                       encoding="utf-8")
+                        os.replace(tmp, path)                     # atomic: a killed run never leaves half a file
                     return result
-            except (TransientError, ModelNotFound) as e:
+            except (TransientError, ModelNotFound, ModelRejected) as e:
                 self.meta.warn(f"{stage}: model {model} failed ({type(e).__name__}: {str(e)[:200]}); trying next")
                 continue
         raise LLMStageError(f"stage {stage}: every model in the chain failed")

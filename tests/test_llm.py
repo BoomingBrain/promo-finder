@@ -73,3 +73,36 @@ def test_rate_limiter_spacing():
     rl = RateLimiter(60, clock=lambda: now[0], sleep=lambda s: (slept.append(s), now.__setitem__(0, now[0] + s)))
     rl.acquire(); rl.acquire()
     assert slept and abs(slept[0] - 1.0) < 1e-6
+
+
+def test_truncated_cache_file_is_treated_as_a_miss(tmp_path):
+    c, m, t = client(tmp_path, ['{"x": 1}', '{"x": 7}'])
+    assert c.complete_json("judge", Q, Out).x == 1
+    (f,) = list(tmp_path.glob("*.json"))
+    f.write_text('{"text": "{\\"x\\": 1', encoding="utf-8")       # a run killed mid-write
+    assert c.complete_json("judge", Q, Out).x == 7 and len(t.calls) == 2
+    assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_unexpected_http_status_falls_back_not_crash(monkeypatch):
+    import openai
+    from promofinder import llm
+
+    def boom(**kw):
+        e = openai.BadRequestError.__new__(openai.BadRequestError)   # no HTTP stack needed
+        Exception.__init__(e, "context too long"); e.status_code = 400
+        raise e
+
+    class FakeOpenAI:
+        def __init__(self, **kw):
+            self.chat = type("C", (), {"completions": type("K", (), {"create": staticmethod(boom)})()})()
+    monkeypatch.setattr(openai, "OpenAI", FakeOpenAI)
+    call = llm.openai_transport("https://x/v1", "k", 5)
+    with pytest.raises(llm.ModelRejected):
+        call("m", Q, 0.0, 10)
+
+
+def test_rejected_model_falls_back_to_next(tmp_path):
+    from promofinder.llm import ModelRejected
+    c, m, t = client(tmp_path, [ModelRejected("400"), '{"x": 3}'])
+    assert c.complete_json("judge", Q, Out).x == 3 and m.counters["fallback_switches"] == 1
