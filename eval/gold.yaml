@@ -3,7 +3,7 @@
 # Every segment starts on a CAMERA shot start and ends on a CAMERA shot end, with no dialogue line cut.
 # Episodes 1-2 deliberately excluded: the dev smoke run touched them, so picks there could be contaminated.
 show: i-married-a-broken-soldier-he-was-a-duke
-picked_by: "AI-drafted (Claude) from the screenplays, then human-reviewed and revised (5 of 12 changed), all before any full tool run"
+picked_by: "AI-drafted (Claude) from the screenplays, then human-reviewed and revised (5 of 12 changed; G06 start re-trimmed on AI self-review to drop the late-Duke portrait shot), all before any full tool run"
 reviewed: true
 picks:
   - {id: G01, segments: [{ep: 4, start: "00:03.20", end: "00:59.00"}], note: "Family mocks the jilted bride and her scarred suitor; she proudly throws the proposal back as pity. Cliff: will she refuse him?"}
@@ -11,7 +11,7 @@ picks:
   - {id: G03, segments: [{ep: 9, start: "01:28.00", end: "01:55.50"}], note: "Rumour reaches the villain that a scarred veteran looks like the dead Duke; his smugness cracks into dread. Cliff: is the Duke alive?"}
   - {id: G04, segments: [{ep: 9, start: "00:00.00", end: "00:54.00"}], note: "Pounding at the door, a dying child, a desperate herbal cure. Cliff: ends on the mother panicking that it is not working, before the healer answers."}
   - {id: G05, segments: [{ep: 15, start: "00:44.20", end: "01:26.00"}], note: "Thugs shove her into the mud and wreck her mother's garden; husband charges out of the dark. Cliff: one man vs three, fight about to start."}
-  - {id: G06, segments: [{ep: 22, start: "01:21.80", end: "02:11.00"}], note: "Disguised maid asks the way to the forbidden wing, slips into the dying Duchess room and realises it is not illness. Cliff: poisoned, by whom?"}
+  - {id: G06, segments: [{ep: 22, start: "01:36.00", end: "02:11.00"}], note: "Opens on an urgent whispered warning as the disguised maid sneaks through the forbidden wing to the dying Duchess and realises it is not illness. Cliff: poisoned, by whom?"}
   - {id: G07, segments: [{ep: 30, start: "00:58.80", end: "01:41.90"}], note: "Villains plan to turn her healing into a poisoning case, then witchcraft. Cliff: ends on the order to rig the trial and hang her."}
   - {id: G08, segments: [{ep: 31, start: "02:04.00", end: "02:40.00"}], note: "Chained heroine defies her tormentor, who snaps, burns her late mother book, then stops a hot iron inches from her eye. Cliff: the iron at her eye."}
   - {id: G09, segments: [{ep: 38, start: "00:45.50", end: "01:27.91"}], note: "Starving prisoner fears dying unseen, vows never to betray her husband; wedding bells mean her execution is next. Cliff: bells toll, cut to black."}
