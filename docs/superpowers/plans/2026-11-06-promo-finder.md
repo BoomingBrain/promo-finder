@@ -28,7 +28,7 @@
 1. **A new show's folder contains non-screenplay files or oddly named episodes** (`notes.md`, `.DS_Store`, `ep7.txt` with no `EPISODE NUMBER` header). Non-`.txt` files are ignored. The episode number falls back to the first integer in the filename, and a file with neither header nor number raises `ReaderError` naming the file. Tests go in Task 2.
 2. **Too few candidates.** An episode too short for any 20 s window, or a whole show yielding fewer than `finalists_n` candidates, produces fewer promos without crashing. Pairwise ranking with an odd count gives a bye. Tests go in Tasks 7 and 17.
 3. **The LLM returns sloppy values:** scores as strings (`"8"`, `"8/10"`), out of range (`11`, `0`), extra fields, or a `<think>…</think>` preamble or ```` ```json ```` fences. Scores are coerced and clamped to 1–10, extra fields are ignored and the JSON is still extracted. Tests go in Tasks 4 and 5.
-4. **Curly quotes, ellipses and em-dashes.** These are all over this pack (`“…”`, `—`), and the quote check must normalise them, so a correct quote of `"...when Clarissa is the true jewel"` passes. Test goes in Task 5.
+4. **Curly quotes, ellipses and em-dashes.** These are all over this pack (`“…”`, `—`), and the quote check must normalise them, so a correct quote of a line containing `…` and curly quotes passes. Test goes in Task 5.
 5. **Missing API key.** `run` without `NVIDIA_API_KEY` exits with a clear message *before* parsing any work, but `run --dry-run` works with no key. Test goes in Task 11.
 
 ---
