@@ -1,0 +1,6 @@
+These are the first 3 seconds of a short vertical video, written as screenplay text:
+
+$first3
+
+You are scrolling past. Would this make you stop? Reply with ONLY this JSON:
+{"score": 1-10, "why": "what grabbed you, or why you kept scrolling"}

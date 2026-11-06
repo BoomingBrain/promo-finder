@@ -1,0 +1,20 @@
+You are a social-media promo editor. Below is the full text of a short video clip (20-60 seconds) cut from a vertical microdrama. Imagine a viewer who has NEVER seen this show and is scrolling TikTok.
+
+CLIP
+$clip
+
+$feedback
+
+Answer as that stranger:
+1. Who is this about, and what is at stake? If you cannot tell, the clip does not stand on its own.
+2. What question does the clip leave open at the end?
+3. Is anything confusing to a new viewer (unexplained names, references to earlier events)?
+
+Then score and describe it. Reply with ONLY this JSON:
+{"standalone": 1-10 (10 = fully understandable with zero context),
+ "confusing_bits": ["short items"],
+ "hook_text": "what happens in the first 3 seconds that would stop a scroller (one short line)",
+ "cliffhanger_text": "the open question the clip ends on (one short line)",
+ "why_it_works": "one line on why this would pull new viewers in (or why it would not)",
+ "spoiler_risk": true/false (gives away a major twist),
+ "resolution_leak": true/false (the clip answers its own question before it ends)}
