@@ -1,5 +1,6 @@
 """Stage 9: Swiss-system pairwise comparisons of finalists with Elo; tracks first-position bias."""
 import random
+from concurrent.futures import ThreadPoolExecutor
 from typing import Literal
 from pydantic import BaseModel, ConfigDict
 from promofinder.cliptext import clip_text
@@ -42,13 +43,21 @@ def rank_pairwise(finalists: list[Promo], episodes: dict[int, Episode], client, 
     for rnd in range(pc.rounds):
         rng = random.Random(pc.seed + rnd)
         pairs, _ = swiss_pairs(ids, ratings)
-        for x, y in pairs:
-            first, second = (x, y) if rng.random() < 0.5 else (y, x)
+        orders = [((x, y) if rng.random() < 0.5 else (y, x)) for x, y in pairs]
+
+        def ask(fs):
+            first, second = fs
             prompt = load_prompt("pairwise").safe_substitute(a=texts[first], b=texts[second])
             try:
-                out = client.complete_json("pairwise", [{"role": "user", "content": prompt}], PairOut)
+                return fs, client.complete_json("pairwise", [{"role": "user", "content": prompt}], PairOut)
             except LLMStageError as e:
                 meta.warn(f"pairwise {first} vs {second} failed ({e})")
+                return fs, None
+
+        with ThreadPoolExecutor(max_workers=max(1, cfg.models.concurrency)) as ex:
+            results = list(ex.map(ask, orders))          # pairs in a round are independent
+        for (first, second), out in results:
+            if out is None:
                 continue
             total += 1
             winner, loser = (first, second) if out.winner == "A" else (second, first)
