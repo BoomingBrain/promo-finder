@@ -62,3 +62,26 @@ def test_low_hook_score_ignored():
 def test_short_episode_yields_nothing():
     tags = EpisodeTags(ep=2, hooks=[H("E02-B002")], cliffhangers=[C("E02-B003")], context_beats=[])
     assert build_candidates(E2, tags, compute_signals(E2, CFG.signals), CFG.scoring) == []
+
+
+def _overlap_ep():
+    from promofinder.models import Beat, Episode
+    mk = lambda i, t, s, e, sp=None: Beat(ep=9, beat_id=f"E09-B{i:03d}", idx=i, scene=1, type=t, speaker=sp, text=f"t{i}", start_s=s, end_s=e)
+    beats = [mk(1, "CAMERA", 0.0, 10.0), mk(2, "DIALOGUE", 8.0, 10.1, "A"),       # line bleeds 0.1 s into the next shot
+             mk(3, "CAMERA", 10.0, 40.0), mk(4, "DIALOGUE", 11.0, 14.0, "B"), mk(5, "DIALOGUE", 30.0, 39.0, "C")]
+    return Episode(ep=9, logline="l", continuity_notes="c", duration_s=40.0, scenes=[], beats=beats, source_file="x")
+
+
+def test_snap_start_avoids_line_bleeding_into_shot():
+    ep = _overlap_ep()
+    hook = next(b for b in ep.beats if b.beat_id == "E09-B004")
+    assert snap_start(ep, hook, 3.0) == 10.1
+
+
+def test_build_never_emits_mid_line_cut():
+    ep = _overlap_ep()
+    tags = EpisodeTags(ep=9, hooks=[H("E09-B004")], cliffhangers=[C("E09-B005")])
+    for c in build_candidates(ep, tags, compute_signals(ep, CFG.signals), CFG.scoring):
+        hb = next(b for b in ep.beats if b.beat_id == c.hook_beat_id); cb = next(b for b in ep.beats if b.beat_id == c.cliff_beat_id)
+        s = c.segments[0]
+        assert "mid_line_cut" not in check_clip_rules(ep, s.start_s, s.end_s, hb, cb, None, CFG.scoring.window)

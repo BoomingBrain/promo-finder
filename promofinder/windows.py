@@ -17,7 +17,12 @@ def shot_at(ep: Episode, t: float) -> Beat | None:
 def snap_start(ep: Episode, hook: Beat, lead_max: float) -> float:
     shot = shot_at(ep, hook.start_s)
     if shot and hook.start_s - shot.start_s <= lead_max + EPS:
-        return shot.start_s
+        if not straddles_dialogue(ep, shot.start_s):
+            return shot.start_s
+        # a previous line bleeds into this shot: start right after it ends, if the hook is still in the lead window
+        tail = max(b.end_s for b in ep.beats if b.type == "DIALOGUE" and b.start_s + EPS < shot.start_s < b.end_s - EPS)
+        if tail <= hook.start_s + EPS and not straddles_dialogue(ep, tail):
+            return tail
     return hook.start_s
 
 
@@ -112,8 +117,8 @@ def build_candidates(ep: Episode, tags: EpisodeTags, sig: dict[str, BeatSignals]
             rs = resolved_start_of(ep, c.resolved_by)
             start, end = snap_start(ep, hb, w.hook_lead_max_s), snap_end(ep, cb, rs)
             v = check_clip_rules(ep, start, end, hb, cb, rs, w)
-            if {"duration", "resolution_inside", "hook_lead"} & set(v):
-                continue
+            if {"duration", "resolution_inside", "hook_lead", "mid_line_cut"} & set(v):
+                continue                                   # hard edit rules (spec §5): never emit these
             p = 0.0
             if "mid_line_cut" in v:
                 p += pen.mid_line_cut
