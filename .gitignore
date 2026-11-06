@@ -1,0 +1,14 @@
+.env
+.venv/
+outputs/
+outputs-alt/
+cache/
+data/
+.superpowers/
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.DS_Store
+*.txt
+!tests/fixtures/**/*.txt
+!prompts/*.txt
