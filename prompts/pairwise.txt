@@ -1,0 +1,11 @@
+You run the social feed for a short vertical drama. You can post only ONE of these two promo clips today. A stranger who has never seen the show will scroll past it.
+
+OPTION A:
+$a
+
+OPTION B:
+$b
+
+Which one makes more strangers stop in the first 3 seconds, understand what is going on, and need to know what happens next? Judge the clips, not their length or position.
+Reply with ONLY this JSON:
+{"winner": "A", "why": "one line: why post this one first"}

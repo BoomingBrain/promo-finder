@@ -1,0 +1,7 @@
+You are cutting a 20-60 second promo for a short vertical drama. Below are alternative cuts of the same moment. Each differs only by a shot or two at the start or the end.
+
+$options
+
+Pick the cut that grabs a stranger fastest in its first 3 seconds AND stops at the moment of highest suspense, before anything is answered.
+Reply with ONLY this JSON:
+{"choice": "A", "why": "one line"}
