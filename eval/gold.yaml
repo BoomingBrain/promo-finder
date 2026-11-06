@@ -3,8 +3,8 @@
 # Every segment starts on a CAMERA shot start and ends on a CAMERA shot end, with no dialogue line cut.
 # Episodes 1-2 deliberately excluded: the dev smoke run touched them, so picks there could be contaminated.
 show: i-married-a-broken-soldier-he-was-a-duke
-picked_by: "AI-drafted (Claude, from reading the screenplays, before any full tool run), pending human review"
-reviewed: false
+picked_by: "AI-drafted (Claude) from the screenplays, then human-reviewed and revised (5 of 12 changed), all before any full tool run"
+reviewed: true
 picks:
   - {id: G01, segments: [{ep: 4, start: "00:03.20", end: "00:59.00"}], note: "Family mocks the jilted bride and her scarred suitor; she proudly throws the proposal back as pity. Cliff: will she refuse him?"}
   - {id: G02, segments: [{ep: 4, start: "01:50.00", end: "02:14.80"}], note: "Wedding pronounced, ex erupts, her comeback lands, mother disowns her on the spot. Cliff: ends on the disowning close-up, cast out with a stranger."}
