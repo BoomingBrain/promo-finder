@@ -106,10 +106,10 @@ def hindsight(episodes: dict[int, Episode], ep_nums: list[int], bible: Bible | N
         risen = {}
         for h in with_ctx.hooks:
             if h.hook_score - base.get(h.beat_id, 0) >= 2:
-                risen[h.beat_id] = (h.hook_score, base.get(h.beat_id, 0))
+                risen[h.beat_id] = (h.hook_score, base.get(h.beat_id))
         for c in with_ctx.cliffhangers:
             if c.cliff_score - base.get(f"c:{c.beat_id}", 0) >= 2:
-                risen[c.beat_id] = (c.cliff_score, base.get(f"c:{c.beat_id}", 0))
+                risen[c.beat_id] = (c.cliff_score, base.get(f"c:{c.beat_id}"))
         for cand in build_candidates(ep, with_ctx, sig, cfg.scoring):
             for bid in (cand.hook_beat_id, cand.cliff_beat_id):
                 if bid in risen:
@@ -121,8 +121,18 @@ def hindsight(episodes: dict[int, Episode], ep_nums: list[int], bible: Bible | N
     judged = judge_all(todo, episodes, client, cfg, meta) if todo else {}
     for bid, (sw, so), cand in risen_cands:
         j = judged.get(cand.cand_id)
-        rows.append({"beat_id": bid, "score_with": sw, "score_without": so, "cand_id": cand.cand_id,
-                     "standalone": j.standalone if j else None})
+        rows.append({"beat_id": bid, "score_with": sw, "score_without": so, "tagged_without": so is not None,
+                     "cand_id": cand.cand_id, "standalone": j.standalone if j else None})
     path = Path(out_dir) / "experiments"; path.mkdir(parents=True, exist_ok=True)
     (path / "exp_b_hindsight.json").write_text(json.dumps(rows, indent=2), encoding="utf-8")
+    def mean_sa(rs):
+        v = [r["standalone"] for r in rs if r["standalone"] is not None]
+        return round(sum(v) / len(v), 2) if v else None
+    rose = [r for r in rows if r["tagged_without"]]
+    only = [r for r in rows if not r["tagged_without"]]
+    summary = {"episodes": ep_nums, "score_rose": len({r["beat_id"] for r in rose}),
+               "context_only": len({r["beat_id"] for r in only}), "mean_standalone_rose": mean_sa(rose),
+               "mean_standalone_context_only": mean_sa(only),
+               "standalone_le_4": sum(1 for r in rows if r["standalone"] is not None and r["standalone"] <= 4)}
+    (path / "exp_b_summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
     return rows

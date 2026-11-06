@@ -63,3 +63,21 @@ def test_experiment_cli_needs_key(monkeypatch):
     monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
     monkeypatch.setattr("promofinder.cli.load_dotenv", lambda: None)
     assert main(["experiment", "plan-a", "--input", "tests/fixtures/show_a", "--episodes", "1"]) == 3
+
+
+class CtxOnly(Ctx):
+    """Without context the tagger finds no hooks at all — absent is not the same as a score of 0."""
+    def complete_json(self, stage, messages, schema, vote_index=0, temperature=None):
+        if stage == "tagger" and "Premise: p" not in str(messages):
+            self.seen.append((stage, messages, vote_index, temperature))
+            return schema.model_validate(EMPTY)
+        return super().complete_json(stage, messages, schema, vote_index, temperature)
+
+
+def test_hindsight_separates_context_only_picks(tmp_path):
+    bible = Bible(premise="p", characters={"Mara": "heroine"}, arc=[Act(name="A", ep_start=1, ep_end=2)],
+                  episode_summaries={1: "a", 2: "b"})
+    rows = hindsight(EPS, [1], bible, CtxOnly([]), CFG, RunMeta(), tmp_path)
+    assert rows and all(r["tagged_without"] is False and r["score_without"] is None for r in rows)
+    s = json.loads((tmp_path / "experiments" / "exp_b_summary.json").read_text())
+    assert s["context_only"] >= 1 and s["score_rose"] == 0

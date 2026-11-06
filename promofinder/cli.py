@@ -41,10 +41,8 @@ def _experiment(args) -> int:
     else:
         bp = out / "bible.json"
         bible = Bible.model_validate_json(bp.read_text(encoding="utf-8")) if bp.exists() else build_bible(read.episodes, client, cfg, meta)
-        rows = experiments.hindsight(eps, nums, bible, client, cfg, meta, out)
-        result = {"risen_beats": len({r["beat_id"] for r in rows}), "rows": len(rows),
-                  "mean_standalone": round(sum(r["standalone"] for r in rows if r["standalone"] is not None)
-                                           / max(1, sum(r["standalone"] is not None for r in rows)), 2)}
+        experiments.hindsight(eps, nums, bible, client, cfg, meta, out)
+        result = json.loads((out / "experiments" / "exp_b_summary.json").read_text(encoding="utf-8"))
     meta.save(out / "experiments" / f"meta_{args.which}.json")
     print(json.dumps(result, indent=2))
     return 0
