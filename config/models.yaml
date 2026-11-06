@@ -1,4 +1,4 @@
-# Model chains per stage: first model is tried first; on 404 / repeated 429-5xx / invalid JSON twice, the next is used.
+# Model chains per stage: first model is tried first; the next is used on 404/4xx, repeated 5xx/timeouts or invalid JSON twice. A 429 waits and retries the SAME model.
 # Verified against a live probe on 2026-11-06 with this account's NVIDIA key: many catalogue-listed models
 # return 404 or time out. Re-probed 2026-11-07: Ultra, GLM-5.3-flash, DeepSeek-v4.1-flash, Mistral-Large-4 answer. Re-probe when switching keys or providers.
 base_url: https://integrate.api.nvidia.com/v1
