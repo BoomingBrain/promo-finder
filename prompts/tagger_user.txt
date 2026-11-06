@@ -1,0 +1,8 @@
+SHOW CONTEXT
+$context
+
+THIS EPISODE: Episode $ep
+Logline: $logline
+
+TRANSCRIPT (one line per moment: [ID] start–end TYPE speaker (emotion): text  {sig: rule-based hints})
+$transcript
