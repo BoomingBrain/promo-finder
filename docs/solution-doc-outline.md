@@ -35,8 +35,10 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 - **First full run** (no show summary, no head-to-head ranking, judge capped at 30):
   - 112 calls, about 373k tokens
   - about 14 min wall time: tagging 672 s, judge 145 s
-- **M2 run:** ⟨PENDING⟩
-- **Final 3-vote run:** ⟨PENDING⟩
+- **M2 run** (+ show summary, calibration examples, judge every candidate): 235 calls, about 569k tokens, tagging 604 s + judging 351 s.
+- **Final 3-vote run** (all 10 stages): 427 calls (324 live), about 1.86M tokens, 41 min 42 s wall time.
+  - The free tier struggled at 3× volume: 36 of 150 tagging calls failed outright, 84 calls fell back to the second model and 95 replies needed a JSON retry.
+  - Token use was about 2× the dry-run estimate because of the retries.
 - **Per new show:** the same command runs unchanged, it resumes after a crash, and responses are cached.
 
 ## 5. How I know it's good, and where it fails
@@ -45,22 +47,29 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 | Run | recall@20 | in candidate pool | invariants | notes |
 |---|---|---|---|---|
 | Baseline (stages 1,2,4,5,7,10) | **1/12** | 9/12 | 100% | tagger scores inflated, judge cut at 30 |
-| M2 (+ show summary, calibration examples, judge all) | ⟨PENDING⟩ | ⟨PENDING⟩ | ⟨PENDING⟩ | |
-| M3 (+ stitch, refine, pairwise) | ⟨PENDING⟩ | ⟨PENDING⟩ | ⟨PENDING⟩ | pairwise first-position rate ⟨PENDING⟩ |
-| Final (3 votes) | ⟨PENDING⟩ | | | precision@10 from editor ✓/✗: ⟨PENDING⟩ |
+| M2 (+ show summary, calibration examples, judge all) | **3/12** | 8/12 | 98.9% | 1 mid-line cut found → bug fixed (ai-log #10) |
+| M3 (+ stitch, refine, debiased pairwise, cut fix) | **3/12** | 8/12 | 100% | branding-iron pick reached #1; pairwise agreed with itself 21% |
+| Final (3 votes, all stages) | **3/12** (#1, #5, #9) | 6/12 | 100% | vote agreement 50%; pairwise agreed with itself 14–25%; precision@10 from editor ✓/✗: ⟨PENDING: user marks⟩ |
 
-- **Where it fails:** fill this in from the misses `eval` lists and the editor's ✗ notes. Known so far:
-  - **Pool size:** with only 3 clips per episode, some strong moments never become candidates.
-  - **Sound-only hooks:** a hook carried only by sound, such as pounding at a door, is hard to judge from text.
+- **Where it fails:** this comes from real evidence, not guesses. `report.md` now flags these automatically for the top 20.
+  - **Ranking, not finding, was the first bottleneck.** In the baseline, 9/12 gold moments were candidates but only 1 made the top 20. Calibration examples and judging every candidate took it to 3/12.
+  - **Tagging is noisy.** The 3 votes agreed on only 50% of tagged moments. Majority voting then *shrank* the pool (6/12 gold moments vs 8–9/12 with 1 vote), so 3 votes did not beat 1 vote on recall.
+  - **Head-to-head ranking is mostly position bias with these models.** It picked the first-shown clip 86–93% of the time. Asking both orders turns those into draws, so it now does no harm, but it adds little.
+  - **Cuts that are close but too long.** G02 and G10 are covered at 45–48%: the tool's clip starts or ends a few shots away from the editor's, so it falls just short of the 50% rule.
+  - **Visual-only hooks.** 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
+  - **Missed scenes.** Some strong moments never became candidates at all (G03, G04, G06). With only 3 clips per episode, a talky set-up beat can crowd them out.
 
 ## 6. AI tools and where they got it wrong (~5 lines)
 - **Tools:** Claude Code (design and code) and NVIDIA API models (tagging, judging, ranking). Models per call are recorded in `run_meta.json`.
 - **The one failure:** pick one of the two candidates below.
   - **Candidate A, Experiment A:** when the model wrote its own clip timestamps, only **6 of 19 (32%)** were usable. 12 were off a shot boundary, 3 cut through a line and 1 was the wrong length. That is why the AI only tags line IDs and code makes every cut.
   - **Candidate B, Experiment B:** given the whole story, the tagger picked 16 moments it never picked without it. Those clips scored **5.59/10** on the blind stranger test, against **7.75** for moments it picked either way. That is why the judge stays blind.
-- **Also real:** the tagger's scores were inflated (median 9/10), which drove the 1/12 baseline. Calibration examples and head-to-head ranking were added as the fix.
+- **Also real:**
+  - The tagger's scores were inflated (median 9/10), which drove the 1/12 baseline.
+  - The head-to-head judge picked the first-shown clip 86% of the time (ai-log #11).
+  - Claude Code itself wrote a clip builder that let a mid-line cut through (ai-log #10), and a hindsight metric that counted "not picked" as a score of 0 (ai-log #9).
 
 ## 7. Links
-- Repo: ⟨your GitHub URL⟩
+- Repo: https://github.com/BoomingBrain/promo-finder (currently private; make it public or invite the reviewers before submitting)
 - Raw outputs: ⟨anyone-with-link Google Drive folder⟩, a zip of `outputs/<show-slug>/` (it quotes the script, so it is never committed)
 - Optional video: ⟨link⟩
