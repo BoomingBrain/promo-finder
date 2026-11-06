@@ -8,7 +8,10 @@ from promofinder.bible import build_bible, render_context
 from promofinder.config import AppConfig, load_config
 from promofinder.judge import judge_all
 from promofinder.meta import RunMeta
-from promofinder.models import Bible, Candidate, EpisodeTags, Judgement
+from promofinder.models import Bible, Candidate, EpisodeTags, Judgement, Segment
+from promofinder.pairwise import rank_pairwise
+from promofinder.refine import refine_promo
+from promofinder.stitcher import stitch
 from promofinder.parse import health_report, load_show, show_slug
 from promofinder.prompts import render_anchors
 from promofinder.rank import finalists, score_all
@@ -45,6 +48,7 @@ class RunOptions:
     model_overrides: dict[str, str] = field(default_factory=dict)
     votes: int | None = None
     feedback: Path | None = None
+    gold_path: Path = Path("eval/gold.yaml")
     dry_run: bool = False
     fresh: bool = False
     force: bool = False
@@ -141,6 +145,11 @@ def run(opts: RunOptions, client_factory=None) -> Path:
     contexts: dict[int, str] = {e: render_context(bible, e) for e in episodes}
     anchors = render_anchors()
     feedback_examples = ""
+    if opts.feedback is not None:
+        from promofinder.feedback import apply as apply_feedback
+        feedback_examples = apply_feedback(opts.feedback, out, cfg, opts.config_dir, opts.gold_path)
+        cfg.scoring = load_config(opts.config_dir).scoring        # pick up scoring.learned.yaml nudges
+        meta.set("feedback_examples", feedback_examples)
 
     tags: dict[int, EpisodeTags] = {}
     tag_dir = out / "tags"; tag_dir.mkdir(exist_ok=True)
@@ -180,7 +189,15 @@ def run(opts: RunOptions, client_factory=None) -> Path:
         with meta.stage_timer("5_windows"):
             for ep_num in sorted(tags):
                 cands += build_candidates(episodes[ep_num], tags[ep_num], signals[ep_num], cfg.scoring)
-    # [Task 18 hook] stage 6: stitched candidates appended here
+    spath = out / "stitched.json"
+    if 6 in opts.stages and tags:
+        with meta.stage_timer("6_stitch"):
+            if spath.exists() and not opts.fresh:
+                stitched = [Candidate.model_validate(c) for c in json.loads(spath.read_text(encoding="utf-8"))]
+            else:
+                stitched = stitch(episodes, tags, bible, get_client(), cfg, meta)
+                _write_json(spath, [c.model_dump() for c in stitched])
+            cands += stitched
     _write_json(out / "candidates.json", [c.model_dump() for c in cands])
 
     judgements: dict[str, Judgement] = {}
@@ -198,8 +215,29 @@ def run(opts: RunOptions, client_factory=None) -> Path:
     with meta.stage_timer("10_rank"):
         promos = score_all(cands, judgements, tags, bible, cfg.scoring)
         finals, rest = finalists(promos, cfg.scoring.finalists_n)
-    # [Task 16 hook] stage 8: refine finalists
-    # [Task 17 hook] stage 9: pairwise-rank finalists
+    if 8 in opts.stages and finals:
+        with meta.stage_timer("8_refine"):
+            rpath = out / "refine.json"
+            saved = json.loads(rpath.read_text(encoding="utf-8")) if rpath.exists() and not opts.fresh else {}
+            def ref(p):
+                cid = p.candidate.cand_id
+                if cid in saved:
+                    segs = saved[cid]
+                    if segs["original"] is None:
+                        return p
+                    return p.model_copy(update={"original_segments": [Segment(**x) for x in segs["original"]],
+                                                "candidate": p.candidate.model_copy(update={"segments": [Segment(**x) for x in segs["segments"]]})})
+                return refine_promo(p, episodes, tags, get_client(), cfg, meta)
+            with ThreadPoolExecutor(max_workers=max(1, cfg.models.concurrency)) as ex:
+                finals = list(ex.map(ref, finals))
+            _write_json(rpath, {p.candidate.cand_id: {"segments": [x.model_dump() for x in p.candidate.segments],
+                                                      "original": [x.model_dump() for x in p.original_segments] if p.original_segments else None}
+                                for p in finals})
+    if 9 in opts.stages and len(finals) > 1:
+        with meta.stage_timer("9_pairwise"):
+            finals = rank_pairwise(finals, episodes, get_client(), cfg, meta)
+            _write_json(out / "pairwise.json", [{"cand_id": p.candidate.cand_id, "elo": p.elo,
+                                                  "post_first_because": p.post_first_because} for p in finals])
     promos = finals + rest
     for i, p in enumerate(promos, 1):
         p.rank = i

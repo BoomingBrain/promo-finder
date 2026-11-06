@@ -25,6 +25,13 @@ class Routed(FakeLLM):
             r = JO
         elif stage == "bible":
             r = BIBLE
+        elif stage == "stitcher":
+            r = {"combos": [{"segments": [{"beat_id": "E01-B003", "role": "hook", "after_s": 10},
+                                          {"beat_id": "E01-B012", "role": "cliff"}], "why": "w"}]}
+        elif stage == "refine":
+            r = {"choice": "A", "why": "w"}
+        elif stage == "pairwise":
+            r = {"winner": "A", "why": "first is better"}
         else:
             r = {"score": 8, "why": "w"}
         return schema.model_validate(r)
@@ -97,3 +104,33 @@ def test_tagger_prompt_carries_anchors(tmp_path):
     llm = Routed([])
     run(opts(tmp_path), client_factory=lambda *a: llm)
     assert all("HOOK SCORE ANCHORS" in str(m) for s, m, v, t in llm.seen if s == "tagger")
+
+
+def test_all_stages_write_their_files(tmp_path):
+    llm = Routed([])
+    o = opts(tmp_path); o.stages = parse_stages("1-10")
+    out = run(o, client_factory=lambda *a: llm)
+    for f in ["bible.json", "refine.json", "pairwise.json"]:
+        assert (out / f).exists(), f
+    promos = json.loads((out / "promos.json").read_text())
+    assert any(p["candidate"]["kind"] == "stitched" for p in promos)
+    assert all(p["elo"] is not None for p in promos[:2])
+    stages = {s for s, *_ in llm.seen}
+    assert {"stitcher", "pairwise"} <= stages
+
+
+def test_feedback_csv_feeds_examples_to_tagger_and_judge(tmp_path):
+    llm = Routed([])
+    out = run(opts(tmp_path), client_factory=lambda *a: llm)
+    import csv
+    rows = list(csv.DictReader(open(out / "promos.csv", encoding="utf-8")))
+    rows[0]["editor_verdict"] = "✓"; rows[0]["editor_note"] = "great slap open"
+    fb = tmp_path / "marked.csv"
+    with open(fb, "w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=rows[0].keys()); w.writeheader(); w.writerows(rows)
+    gold = tmp_path / "gold.yaml"; gold.write_text("picks: []\n")
+    llm2 = Routed([])
+    run(opts(tmp_path, feedback=fb, fresh=True, gold_path=gold), client_factory=lambda *a: llm2)
+    msgs = [str(m) for s, m, v, t in llm2.seen if s in ("tagger", "judge")]
+    assert msgs and all("great slap open" in m for m in msgs)
+    assert "F1" in gold.read_text()

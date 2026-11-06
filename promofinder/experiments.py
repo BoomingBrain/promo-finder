@@ -1,6 +1,7 @@
 """Experiments for the solution doc (§13.2).
 A: "Plan A" — let the LLM write timestamps itself, then check them.  B: hindsight bias of the show context."""
 import json
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from pydantic import BaseModel, ConfigDict
 from promofinder.bible import render_context
@@ -89,10 +90,16 @@ def hindsight(episodes: dict[int, Episode], ep_nums: list[int], bible: Bible | N
               meta: RunMeta, out_dir: Path) -> list[dict]:
     anchors = render_anchors()
     rows, risen_cands = [], []
-    for n in ep_nums:
+    def both(n):
         ep = episodes[n]; sig = compute_signals(ep, cfg.signals)
-        with_ctx = tag_episode(ep, sig, client, cfg, meta, context=render_context(bible, n), anchors=anchors, vote_index=100)
-        without = tag_episode(ep, sig, client, cfg, meta, context="", anchors=anchors, vote_index=101)
+        ctx = render_context(bible, n)
+        jobs = [(ctx, 100), ("", 101)]
+        return n, sig, [tag_episode(ep, sig, client, cfg, meta, context=c, anchors=anchors, vote_index=v) for c, v in jobs]
+
+    with ThreadPoolExecutor(max_workers=max(1, cfg.models.concurrency // 2)) as ex:
+        tagged = list(ex.map(both, ep_nums))
+    for n, sig, (with_ctx, without) in tagged:
+        ep = episodes[n]
         if with_ctx is None or without is None:
             continue
         base = {h.beat_id: h.hook_score for h in without.hooks} | {f"c:{c.beat_id}": c.cliff_score for c in without.cliffhangers}
