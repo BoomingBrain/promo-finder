@@ -1,7 +1,20 @@
 # Hand-picked promos, chosen BEFORE seeing any tool output (spec §8.2, §12).
 # Episode + timestamps only — no script quotes (this file is committed to a public repo).
+# Every segment starts on a CAMERA shot start and ends on a CAMERA shot end, with no dialogue line cut.
+# Episodes 1-2 deliberately excluded: the dev smoke run touched them, so picks there could be contaminated.
 show: i-married-a-broken-soldier-he-was-a-duke
-picked_by: "<your name>, before seeing tool output"
-picks: []
-#  - {id: G01, segments: [{ep: 1, start: "00:11.00", end: "00:45.00"}], note: "short reason, no script quotes"}
-#  - {id: G02, segments: [{ep: 3, start: "01:02.00", end: "01:40.00"}], note: "..."}
+picked_by: "AI-drafted (Claude, from reading the screenplays, before any full tool run), pending human review"
+reviewed: false
+picks:
+  - {id: G01, segments: [{ep: 4, start: "00:03.20", end: "00:59.00"}], note: "Family mocks the jilted bride and her scarred suitor; she proudly throws the proposal back as pity. Cliff: will she refuse him?"}
+  - {id: G02, segments: [{ep: 4, start: "01:50.00", end: "02:16.00"}], note: "Wedding pronounced, ex erupts, her comeback lands, mother disowns her on the spot. Cliff: cast out with a stranger, where now?"}
+  - {id: G03, segments: [{ep: 9, start: "01:28.00", end: "01:55.50"}], note: "Rumour reaches the villain that a scarred veteran looks like the dead Duke; his smugness cracks into dread. Cliff: is the Duke alive?"}
+  - {id: G04, segments: [{ep: 9, start: "00:00.00", end: "00:56.00"}], note: "Pounding at the door, a dying child, a desperate herbal cure that seems not to work. Cliff: will the boy live?"}
+  - {id: G05, segments: [{ep: 15, start: "00:44.20", end: "01:26.00"}], note: "Thugs shove her into the mud and wreck her mother's garden; husband charges out of the dark. Cliff: one man vs three, fight about to start."}
+  - {id: G06, segments: [{ep: 22, start: "01:48.50", end: "02:11.00"}], note: "Disguised as a maid she reaches the dying Duchess and realises it is not illness. Cliff: poisoned, by whom?"}
+  - {id: G07, segments: [{ep: 30, start: "00:58.80", end: "01:34.50"}], note: "Villains plan to twist her healing into a poisoning case, then a witchcraft charge. Cliff: a capital charge, coldly confirmed."}
+  - {id: G08, segments: [{ep: 30, start: "02:01.90", end: "02:31.21"}], note: "Trial set for tomorrow, they gloat about the noose, warrant written; cut to her alone in the dungeon. Cliff: she doesn't know yet."}
+  - {id: G09, segments: [{ep: 38, start: "00:45.50", end: "01:27.91"}], note: "Starving prisoner fears dying unseen, vows never to betray her husband; wedding bells mean her execution is next. Cliff: bells toll, cut to black."}
+  - {id: G10, segments: [{ep: 44, start: "00:24.40", end: "01:10.50"}], note: "Jilted fiancee begs the returned Duke, he coldly rejects her and walks to his chained bride. Cliff: her shocked outburst."}
+  - {id: G11, segments: [{ep: 48, start: "00:00.00", end: "00:26.70"}], note: "Humiliated rival turns the Duke's ten-day reprieve into a weapon in a cold monologue. Cliff: the door can be closed from the other side."}
+  - {id: G12, segments: [{ep: 48, start: "00:46.80", end: "01:13.50"}], note: "Rival reveals she will sneak back into the house and bribes a maid to fetch the priest in secret. Cliff: what will the priest do?"}
