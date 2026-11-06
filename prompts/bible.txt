@@ -1,0 +1,13 @@
+You are a story editor for a short-form vertical drama. Below are the writers' own logline and continuity notes for all $n episodes, in order. Compress them into a show bible. Use only what is written here; do not invent events.
+
+$episodes
+
+Reply with ONLY this JSON:
+{
+  "premise": "2 lines a stranger understands",
+  "characters": {"Name": "plain role a stranger understands, e.g. 'jilted bride, the heroine'"},
+  "arc": [{"name": "act name", "ep_start": 1, "ep_end": 5, "summary": "one line"}],
+  "episode_summaries": {"1": "one line per episode, for every episode"},
+  "major_reveals": [{"desc": "the twist", "ep": 30, "setup_eps": [2, 9]}]
+}
+Use 6-10 acts that cover every episode without gaps.

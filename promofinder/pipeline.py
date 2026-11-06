@@ -4,6 +4,7 @@ import math
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
+from promofinder.bible import build_bible, render_context
 from promofinder.config import AppConfig, load_config
 from promofinder.judge import judge_all
 from promofinder.meta import RunMeta
@@ -127,9 +128,16 @@ def run(opts: RunOptions, client_factory=None) -> Path:
         _write_json(out / "signals.json", {bid: {"score": s.score, "hints": s.hints}
                                            for sig in signals.values() for bid, s in sig.items()})
 
-    # [Task 12 hook] stage 3: show bible
     bible: Bible | None = None
-    contexts: dict[int, str] = {}
+    bpath = out / "bible.json"
+    if bpath.exists() and not (opts.fresh and 3 in opts.stages):
+        bible = Bible.model_validate_json(bpath.read_text(encoding="utf-8"))
+    elif 3 in opts.stages:
+        with meta.stage_timer("3_bible"):
+            bible = build_bible(read.episodes, get_client(), cfg, meta)
+            if bible is not None:
+                bpath.write_text(bible.model_dump_json(indent=2), encoding="utf-8")
+    contexts: dict[int, str] = {e: render_context(bible, e) for e in episodes}
     anchors = ""
     feedback_examples = ""
 

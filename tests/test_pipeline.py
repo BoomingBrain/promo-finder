@@ -12,6 +12,10 @@ JO = {"standalone": 8, "confusing_bits": [], "hook_text": "slap", "cliffhanger_t
       "spoiler_risk": False, "resolution_leak": False}
 
 
+BIBLE = {"premise": "p", "characters": {"Mara": "accused heroine"}, "arc": [{"name": "Accusation", "ep_start": 1, "ep_end": 2}],
+         "episode_summaries": {"1": "accused", "2": "garden aftermath"}, "major_reveals": []}
+
+
 class Routed(FakeLLM):
     def complete_json(self, stage, messages, schema, vote_index=0, temperature=None):
         self.seen.append((stage, messages, vote_index, temperature))
@@ -19,6 +23,8 @@ class Routed(FakeLLM):
             r = TAG if "Mara is publicly accused" in str(messages) else EMPTY   # ep 1 logline
         elif stage == "judge":
             r = JO
+        elif stage == "bible":
+            r = BIBLE
         else:
             r = {"score": 8, "why": "w"}
         return schema.model_validate(r)
@@ -72,3 +78,16 @@ def test_parse_health_error_exit_code(tmp_path, monkeypatch):
     (bad / "ep2.txt").write_text(txt)
     monkeypatch.setattr("promofinder.cli.load_dotenv", lambda *a, **k: None)
     assert main(["run", "--input", str(bad), "--out", str(tmp_path / "o"), "--dry-run"]) == 2
+
+
+def test_bible_stage_feeds_tagger_and_resumes(tmp_path):
+    llm = Routed([])
+    o = opts(tmp_path); o.stages = parse_stages("1-5,7,10")
+    out = run(o, client_factory=lambda *a: llm)
+    assert json.loads((out / "bible.json").read_text())["characters"] == {"Mara": "accused heroine"}
+    tag_msgs = [str(m) for s, m, v, t in llm.seen if s == "tagger"]
+    assert all("Mara — accused heroine" in m for m in tag_msgs)
+    assert any("next episode: garden aftermath" in m for m in tag_msgs)
+    n = sum(1 for s, *_ in llm.seen if s == "bible")
+    run(o, client_factory=lambda *a: llm)
+    assert n == 1 and sum(1 for s, *_ in llm.seen if s == "bible") == 1
