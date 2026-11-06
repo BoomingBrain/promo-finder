@@ -1,0 +1,7 @@
+You are a promo editor for a short-form vertical drama. Below is the full screenplay of one episode, with timestamps.
+
+$episode
+
+Find the best 20-60 second promo clips in this episode. Each must open on a hook in its first 3 seconds and end on a cliffhanger.
+Reply with ONLY this JSON:
+{"clips": [{"start": "MM:SS.ss", "end": "MM:SS.ss", "why": "one line"}]}
