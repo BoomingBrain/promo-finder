@@ -60,3 +60,11 @@ def test_eval_cli(tmp_path, capsys):
     gold = make_run(tmp_path / "run")
     assert main(["eval", "--run", str(tmp_path / "run"), "--gold", str(gold)]) == 0
     assert "recall_at_20" in capsys.readouterr().out
+
+
+def test_feedback_picks_scored_separately(tmp_path):
+    gold = make_run(tmp_path / "run")
+    gold.write_text(gold.read_text() + '  - {id: F1, segments: [{ep: 1, start: "01:40.00", end: "02:10.00"}], note: n}\n')
+    r = evaluate(tmp_path / "run", gold)
+    assert r["n_gold"] == 2 and r["recall_at_20"] == 0.5       # F-picks never count toward the human-gold recall
+    assert r["n_feedback_gold"] == 1 and r["recall_at_20_feedback"] == 1.0

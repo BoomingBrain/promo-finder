@@ -64,9 +64,11 @@ def evaluate(run_dir: Path, gold_path: Path, compare_dir: Path | None = None, co
     run_dir = Path(run_dir)
     promos = sorted(_promos(run_dir), key=lambda p: p.rank)
     meta = json.loads((run_dir / "run_meta.json").read_text(encoding="utf-8")) if (run_dir / "run_meta.json").exists() else {}
-    gold = load_gold(gold_path)
-    detail, hits = {}, 0
-    for g in gold:
+    allg = load_gold(gold_path)
+    gold = [g for g in allg if not g["id"].startswith("F")]          # human picks
+    fgold = [g for g in allg if g["id"].startswith("F")]             # editor ✓ on earlier tool output
+    detail, hits, fhits = {}, 0, 0
+    for g in allg:
         best = (0.0, None)
         for p in promos:
             o = max((overlap(s, gs) for s in p.candidate.segments for gs in g["segments"]), default=0.0)
@@ -75,7 +77,11 @@ def evaluate(run_dir: Path, gold_path: Path, compare_dir: Path | None = None, co
             elif best[1] is None and o > best[0]:
                 best = (o, None)
         detail[g["id"]] = {"best_rank": best[1], "overlap": round(best[0], 3)}
-        hits += best[1] is not None and best[1] <= 20
+        hit = best[1] is not None and best[1] <= 20
+        if g["id"].startswith("F"):
+            fhits += hit
+        else:
+            hits += hit
     tags = _tags(run_dir)
     qm = meta.get("counters", {}).get("quote_mismatches", 0)
     kept = sum(len(t.hooks) + len(t.cliffhangers) for t in tags.values())
@@ -92,6 +98,8 @@ def evaluate(run_dir: Path, gold_path: Path, compare_dir: Path | None = None, co
         "vote_agreement": meta.get("values", {}).get("vote_agreement"),
         "top10_overlap_with_compare": cmp,
         "n_gold": len(gold),
+        "recall_at_20_feedback": fhits / len(fgold) if fgold else None,
+        "n_feedback_gold": len(fgold),
         "gold_detail": detail,
     }
     (run_dir / f"eval_{datetime.now():%Y%m%d-%H%M%S}.json").write_text(json.dumps(result, indent=2), encoding="utf-8")
