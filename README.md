@@ -29,6 +29,23 @@ Free key: build.nvidia.com. Models per stage are in `config/models.yaml` (ordere
 .venv/bin/python -m promofinder run --input "/path/to/show" --model judge=some/other-model
 ```
 
+### Evaluate, experiment, feed back
+
+```bash
+# score a run against the hand-picked gold set (recall@20, precision@10 from editor marks, invariants, stability)
+.venv/bin/python -m promofinder eval --run outputs/<show-slug> --gold eval/gold.yaml [--compare outputs/<other-run>]
+
+# Experiment A: let the LLM write timestamps itself, then check them
+.venv/bin/python -m promofinder experiment plan-a --input "/path/to/show" --episodes 1,10,20,30,40
+# Experiment B: does full-story context make the tagger pick moments strangers can't follow?
+.venv/bin/python -m promofinder experiment hindsight --input "/path/to/show" --episodes 1,7,13,19,25,31,37,43
+
+# editor loop: mark editor_verdict ✓/✗ (+ editor_note) in promos.csv, then rerun with it
+.venv/bin/python -m promofinder run --input "/path/to/show" --feedback outputs/<show-slug>/promos.csv
+```
+
+`eval` scores only the human-picked `G` entries for `recall_at_20`; promos an editor ✓'d on earlier tool output are added to the gold file as `F` entries and reported separately (`recall_at_20_feedback`), so the tool never grades itself on its own picks. Gold picks are never shown to any model.
+
 Runs **resume**: every stage saves its output under `outputs/<show-slug>/` and is skipped next time (`--fresh` recomputes). Responses are cached in `cache/`. A run stops with a parse-health report if more than 5% of any episode's lines fail to parse (`--force` overrides).
 
 **Swap the model provider:** any OpenAI-compatible endpoint works — edit `base_url` and `api_key_env` in `config/models.yaml` (e.g. Kuku's own API, Groq, Ollama).
@@ -42,7 +59,7 @@ Runs **resume**: every stage saves its output under `outputs/<show-slug>/` and i
 | 3 | Show bible (full-story context) | LLM, 1 call | `bible.json` |
 | 4 | Tag hooks/cliffhangers by line ID (+ quote check, optional majority vote) | LLM, 1 call/episode | `tags/ep_NNN.json` |
 | 5 | Build clips (snap to camera shots, 20–60 s, hook in first 3 s, no mid-line cuts) | code | `candidates.json` |
-| 6 | Multi-segment stitcher | LLM proposes, code validates | appended to `candidates.json` |
+| 6 | Multi-segment stitcher (experimental) | LLM proposes beat IDs, code builds + validates | `stitched.json`, appended to candidates |
 | 7 | Blind judge + first-3-seconds test | LLM | `judgements.json` |
 | 8 | Cut refinement | code offers options, LLM picks | `refine.json` |
 | 9 | Pairwise "which would you post first?" ranking | LLM | `pairwise.json` |
