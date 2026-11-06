@@ -127,7 +127,7 @@ Before any episode is tagged, the model gets the **whole story arc, including wh
 - **Input:** all 50 loglines and continuity notes (~4k tokens). These are the writers' own summaries, so the model compresses the story without inventing it.
 - **Output (JSON):**
   - `premise`: 2 lines
-  - `characters`: name → plain role a stranger understands ("Juliana — jilted bride, the heroine"; "Clarissa — her cruel sister")
+  - `characters`: name → plain role a stranger understands ("Mara — jilted bride, the heroine"; "Lena — her cruel sister")
   - `arc`: the story in 6–10 acts, each with its episode range
   - `episode_summaries`: one line per episode
   - `major_reveals`: each twist with the episode where it lands and the earlier episodes that set it up

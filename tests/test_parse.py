@@ -40,4 +40,4 @@ def test_episode_number_fallback_and_error(tmp_path):
 
 
 def test_slug():
-    assert show_slug(Path("I Married a Broken Soldier. He was a Duke")) == "i-married-a-broken-soldier-he-was-a-duke"
+    assert show_slug(Path("My Show. Part Two (Final)")) == "my-show-part-two-final"
