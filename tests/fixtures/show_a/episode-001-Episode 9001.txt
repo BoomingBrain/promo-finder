@@ -1,0 +1,73 @@
+EPISODE NUMBER: Episode 1
+EPISODE LOGLINE: Mara is publicly accused of theft at her engagement party.
+CONTINUITY NOTES: Synthetic test fixture.
+
+--- SCRIPT START ---
+
+SCENE 01
+Scene heading: INT. BALLROOM – NIGHT
+Scene start: 00:00.00
+Scene end: 00:30.00
+
+Actions and dialogue:
+
+**CAMERA:**
+Start: (00:00.00) | End: (00:04.00)
+Wide shot of the crowded ballroom.
+
+**CAMERA:**
+Start: (00:04.00) | End: (00:09.00)
+Close-up on Mara as a glass shatters.
+
+**ACTION:**
+Start: (00:05.00) | End: (00:06.00)
+Victor slaps Mara across the face.
+
+**VICTOR (Furious):**
+Start: (00:06.50) | End: (00:08.50)
+"You stole my mother’s ring!"
+
+**CAMERA:**
+Start: (00:09.00) | End: (00:20.00)
+Medium shot of guests gasping.
+
+**MARA (Shocked, Trembling):**
+Start: (00:10.00) | End: (00:12.00)
+"I have never seen that ring…"
+
+**CAMERA:**
+Start: (00:20.00) | End: (00:30.00)
+Slow push-in on Victor.
+
+**VICTOR (Cold):**
+Start: (00:21.00) | End: (00:24.00)
+"Then explain why it is in your bag."
+
+SCENE 02
+Scene heading: INT. HALLWAY – CONTINUOUS
+Scene start: 00:30.00
+Scene end: 00:55.00
+
+Actions and dialogue:
+
+**CAMERA:**
+Start: (00:30.00) | End: (00:42.00)
+Tracking shot as Mara opens her bag.
+
+**MARA (Desperate):**
+Start: (00:33.00) | End: (00:35.00)
+"Someone put this here."
+
+**CAMERA:**
+Start: (00:42.00) | End: (00:52.00)
+Close-up on the ring glinting in her palm.
+
+**SOUND FX:**
+Start: (00:48.00) | End: (00:52.00)
+Ominous string swell rises to a cliffhanger peak.
+
+**CAMERA:**
+Start: (00:52.00) | End: (00:55.00)
+Cut to black.
+
+--- SCRIPT END ---

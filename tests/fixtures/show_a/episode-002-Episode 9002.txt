@@ -1,0 +1,26 @@
+EPISODE NUMBER: Episode 2
+EPISODE LOGLINE: Mara meets a stranger in the garden.
+CONTINUITY NOTES: Synthetic test fixture with upper-case scene headers.
+
+--- SCRIPT START ---
+
+SCENE 01
+SCENE HEADING: EXT. GARDEN – DAY
+SCENE START: 00:00.00
+SCENE END: 00:15.00
+
+ACTIONS AND DIALOGUE:
+
+**CAMERA:**
+Start: (00:00.00) | End: (00:15.00)
+Static shot of the garden.
+
+**MARA (Quiet):**
+Start: (00:02.00) | End: (00:04.00)
+"Who are you?"
+
+**ACTION:**
+Start: (00:10.00) | End: (00:12.00)
+Mara drops the ring.
+
+--- SCRIPT END ---
