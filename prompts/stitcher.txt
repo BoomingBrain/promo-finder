@@ -1,0 +1,16 @@
+You edit promos for a short vertical drama. A promo may join 2-3 short moments from different points of the story into one 20-60 second clip that tells a mini-story: it must OPEN on a hook and END on a cliffhanger.
+
+$context
+
+Strongest hook moments (id | episode | what happens):
+$hooks
+
+Strongest cliffhanger moments (id | episode | what happens):
+$cliffs
+
+Propose up to $max combos, segments in story order. Each segment is a beat id from the lists above, its role, and optional seconds of surrounding context to include.
+Reply with ONLY this JSON:
+{"combos": [{"segments": [{"beat_id": "E01-B003", "role": "hook", "before_s": 0, "after_s": 8},
+                          {"beat_id": "E04-B020", "role": "cliff", "before_s": 6, "after_s": 0}],
+             "why": "one line"}]}
+Roles: "hook" (first), optional "bridge", "cliff" (last).
