@@ -83,7 +83,8 @@ def estimate(read: ReadResult, opts: RunOptions, cfg: AppConfig) -> list[tuple[s
     if 8 in s:
         rows.append(("refine", sc.finalists_n, sc.finalists_n * 2500))
     if 9 in s:
-        rows.append(("pairwise", sc.pairwise.rounds * math.ceil(sc.finalists_n / 2), sc.pairwise.rounds * math.ceil(sc.finalists_n / 2) * 2000))
+        n_pw = 2 * sc.pairwise.rounds * (sc.finalists_n // 2)          # both orders per pair
+        rows.append(("pairwise", n_pw, n_pw * 2000))
     return rows
 
 

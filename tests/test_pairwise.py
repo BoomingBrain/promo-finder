@@ -44,3 +44,25 @@ def test_rank_pairwise_strongest_wins():
 def test_rank_pairwise_single_unchanged():
     one = [_p("x", 4.0, 30.0, 5.0)]
     assert rank_pairwise(one, EPS, PreferSlap([]), CFG, RunMeta()) == one
+
+
+class AlwaysA(FakeLLM):
+    """A fully position-biased judge: always picks whatever is shown first."""
+    def complete_json(self, stage, messages, schema, vote_index=0, temperature=None):
+        self.seen.append(stage)
+        return schema.model_validate({"winner": "A", "why": "first"})
+
+
+def test_position_biased_judge_yields_draws_not_wins():
+    fins = [_p("x", 30.0, 52.0, 9.0), _p("y", 4.0, 30.0, 5.0), _p("z", 30.0, 55.0, 8.0)]
+    meta = RunMeta()
+    out = rank_pairwise(fins, EPS, AlwaysA([]), CFG, meta)
+    assert all(p.elo == CFG.scoring.pairwise.start_rating for p in out)          # every comparison is a draw
+    assert [p.candidate.cand_id for p in out] == ["x", "z", "y"]                # falls back to final_score
+    assert meta.values["pairwise_first_position_rate"] == 1.0 and meta.counters["pairwise_inconsistent"] >= 1
+
+
+def test_each_pair_asked_in_both_orders():
+    llm = PreferSlap([])
+    rank_pairwise([_p("a", 30.0, 52.0, 9.0), _p("b", 4.0, 30.0, 5.0)], EPS, llm, CFG, RunMeta())
+    assert len(llm.seen) == 2 * CFG.scoring.pairwise.rounds
