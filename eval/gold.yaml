@@ -3,8 +3,8 @@
 # Every segment starts on a CAMERA shot start and ends on a CAMERA shot end, with no dialogue line cut.
 # Episodes 1-2 deliberately excluded: the dev smoke run touched them, so picks there could be contaminated.
 show: i-married-a-broken-soldier-he-was-a-duke
-picked_by: "AI-drafted (Claude) from the screenplays, then human-reviewed and revised (5 of 12 changed; G06 start re-trimmed on AI self-review to drop the late-Duke portrait shot), all before any full tool run"
-reviewed: true
+picked_by: "AI-drafted (Claude) from the screenplays, then human-reviewed and revised (5 of 12 changed; G06 start re-trimmed on AI self-review to drop the late-Duke portrait shot; G11 swapped from ep48 villain monologue to an ep13 visual pick at user request), all before any full tool run"
+reviewed: false  # G11 replacement awaiting user review
 picks:
   - {id: G01, segments: [{ep: 4, start: "00:03.20", end: "00:59.00"}], note: "Family mocks the jilted bride and her scarred suitor; she proudly throws the proposal back as pity. Cliff: will she refuse him?"}
   - {id: G02, segments: [{ep: 4, start: "01:50.00", end: "02:14.80"}], note: "Wedding pronounced, ex erupts, her comeback lands, mother disowns her on the spot. Cliff: ends on the disowning close-up, cast out with a stranger."}
@@ -16,5 +16,5 @@ picks:
   - {id: G08, segments: [{ep: 31, start: "02:04.00", end: "02:40.00"}], note: "Chained heroine defies her tormentor, who snaps, burns her late mother book, then stops a hot iron inches from her eye. Cliff: the iron at her eye."}
   - {id: G09, segments: [{ep: 38, start: "00:45.50", end: "01:27.91"}], note: "Starving prisoner fears dying unseen, vows never to betray her husband; wedding bells mean her execution is next. Cliff: bells toll, cut to black."}
   - {id: G10, segments: [{ep: 44, start: "00:24.40", end: "01:10.50"}], note: "Jilted fiancee begs the returned Duke, he coldly rejects her and walks to his chained bride. Cliff: her shocked outburst."}
-  - {id: G11, segments: [{ep: 48, start: "00:00.00", end: "00:26.70"}], note: "Humiliated rival turns the Duke's ten-day reprieve into a weapon in a cold monologue. Cliff: the door can be closed from the other side."}
+  - {id: G11, segments: [{ep: 13, start: "00:47.00", end: "01:43.00"}], note: "Chained husband screams for her to stop as she crawls barehanded into frozen thorns, bleeding while her family jeers that his freedom is buried in there. Cliff: she begs the ring to be there, cut before she finds it."}
   - {id: G12, segments: [{ep: 48, start: "00:46.80", end: "01:13.50"}], note: "Rival reveals she will sneak back into the house and bribes a maid to fetch the priest in secret. Cliff: what will the priest do?"}
