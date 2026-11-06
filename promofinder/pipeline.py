@@ -10,6 +10,7 @@ from promofinder.judge import judge_all
 from promofinder.meta import RunMeta
 from promofinder.models import Bible, Candidate, EpisodeTags, Judgement
 from promofinder.parse import health_report, load_show, show_slug
+from promofinder.prompts import render_anchors
 from promofinder.rank import finalists, score_all
 from promofinder.readers.base import ReadResult
 from promofinder.report import write_outputs
@@ -138,7 +139,7 @@ def run(opts: RunOptions, client_factory=None) -> Path:
             if bible is not None:
                 bpath.write_text(bible.model_dump_json(indent=2), encoding="utf-8")
     contexts: dict[int, str] = {e: render_context(bible, e) for e in episodes}
-    anchors = ""
+    anchors = render_anchors()
     feedback_examples = ""
 
     tags: dict[int, EpisodeTags] = {}

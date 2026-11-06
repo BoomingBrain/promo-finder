@@ -91,3 +91,9 @@ def test_bible_stage_feeds_tagger_and_resumes(tmp_path):
     n = sum(1 for s, *_ in llm.seen if s == "bible")
     run(o, client_factory=lambda *a: llm)
     assert n == 1 and sum(1 for s, *_ in llm.seen if s == "bible") == 1
+
+
+def test_tagger_prompt_carries_anchors(tmp_path):
+    llm = Routed([])
+    run(opts(tmp_path), client_factory=lambda *a: llm)
+    assert all("HOOK SCORE ANCHORS" in str(m) for s, m, v, t in llm.seen if s == "tagger")

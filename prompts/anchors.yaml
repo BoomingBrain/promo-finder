@@ -1,0 +1,19 @@
+# Calibration anchors for the tagger. Original examples written for this repo — NOT taken from any show
+# input or from eval/gold.yaml (the gold set must stay unseen by the models).
+rule: >-
+  Use the whole scale. In a typical episode most beats score 3-6; give 9-10 to at most 2 hooks and
+  at most 2 cliffhangers per episode, and only when they would stop a stranger mid-scroll.
+hooks:
+  - {score: 2, example: "Two characters agree on what time dinner is", why: "no conflict, no question, nothing to stop for"}
+  - {score: 3, example: "A woman quietly folds laundry while talking about the weather", why: "calm, everyday, no stakes"}
+  - {score: 5, example: "A man frowns at a letter but we never learn what it says", why: "mild curiosity, low emotion"}
+  - {score: 6, example: "A sister makes a snide remark about the heroine's dress at a party", why: "clear tension, but small stakes"}
+  - {score: 8, example: "A groom announces in front of all the guests that he is calling off the wedding", why: "public humiliation, instant stakes"}
+  - {score: 9, example: "A stranger slaps the heroine in the first second and calls her a thief", why: "shock + accusation in one beat, no setup needed"}
+cliffhangers:
+  - {score: 2, example: "The couple says goodnight and turns off the lamp", why: "the scene closes, no open question"}
+  - {score: 3, example: "A character says she will think about the offer tomorrow", why: "a question, but no urgency or danger"}
+  - {score: 5, example: "Someone knocks on the door and the scene ends before it opens", why: "generic suspense, stakes unknown"}
+  - {score: 6, example: "The villain smiles and says the plan is in motion", why: "threat implied but vague"}
+  - {score: 8, example: "The heroine opens a drawer and finds her own wanted poster", why: "concrete danger, clear question"}
+  - {score: 9, example: "A blade stops an inch from the hero's throat as the screen cuts to black", why: "life at stake, answer withheld at the peak"}
