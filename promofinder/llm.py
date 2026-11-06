@@ -25,6 +25,10 @@ class TransientError(Exception):
     """429 / 5xx / timeout: worth retrying."""
 
 
+class RateLimited(TransientError):
+    """429: the model is fine but busy. Wait and retry the SAME model; never downgrade because of it."""
+
+
 class ModelNotFound(Exception):
     """Model id unknown or not available to this key."""
 
@@ -48,14 +52,18 @@ def openai_transport(base_url: str, api_key: str, timeout_s: float) -> Transport
         try:
             r = client.chat.completions.create(model=model, messages=messages, temperature=temperature,
                                                max_tokens=max_tokens)
-        except (openai.RateLimitError, openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError) as e:
+        except openai.RateLimitError as e:
+            raise RateLimited(str(e)) from e
+        except (openai.APITimeoutError, openai.APIConnectionError, openai.InternalServerError) as e:
             raise TransientError(str(e)) from e
         except openai.NotFoundError as e:
             raise ModelNotFound(f"{model}: {e}") from e
         except openai.APIStatusError as e:
             if e.status_code in (404, 410, 422):
                 raise ModelNotFound(f"{model}: {e}") from e
-            if e.status_code >= 500 or e.status_code == 429:
+            if e.status_code == 429:
+                raise RateLimited(str(e)) from e
+            if e.status_code >= 500:
                 raise TransientError(str(e)) from e
             raise ModelRejected(f"{model}: HTTP {e.status_code}: {str(e)[:300]}") from e
         msg = r.choices[0].message if r.choices else None
@@ -133,19 +141,27 @@ class LLMClient:
             return None                                   # truncated/corrupt entry: treat as a miss and overwrite
 
     def _call(self, stage, model, msgs, temperature, fallback) -> Completion:
-        """Call with retries on TransientError. Raises TransientError/ModelNotFound when exhausted."""
-        for k in range(self.cfg.max_retries + 1):
+        """Retries: rate limits wait on the same model (capped exponential backoff, up to rate_limit_retries);
+        other transient errors retry max_retries times. Raises when exhausted."""
+        k = rl = 0
+        while True:
             self.limiter.acquire()
             t = time.monotonic()
             try:
                 c = self.transport(model, msgs, temperature, self.cfg.max_tokens)
                 self.meta.record_call(stage, model, c.prompt_tokens, c.completion_tokens, time.monotonic() - t, False, fallback)
                 return c
+            except RateLimited:
+                if rl >= self.cfg.rate_limit_retries:
+                    raise
+                self.meta.incr("rate_limit_waits")
+                self.sleep(min(self.cfg.rate_limit_backoff_max_s, self.cfg.backoff_base_s * 2 ** rl))
+                rl += 1
             except TransientError:
-                if k == self.cfg.max_retries:
+                if k >= self.cfg.max_retries:
                     raise
                 self.sleep(self.cfg.backoff_base_s * 2 ** k)
-        raise TransientError("unreachable")
+                k += 1
 
     def _run(self, stage, messages, parse, vote_index, temperature):
         st = self.cfg.stages[stage]
@@ -178,6 +194,12 @@ class LLMClient:
                                        encoding="utf-8")
                         os.replace(tmp, path)                     # atomic: a killed run never leaves half a file
                     return result
+            except RateLimited as e:
+                # a busy model is not a broken one: fail this call loudly rather than silently use a weaker model
+                self.meta.incr("rate_limit_exhausted")
+                self.meta.warn(f"{stage}: model {model} still rate-limited after {self.cfg.rate_limit_retries} waits; "
+                               "call skipped (rerun to retry) instead of downgrading")
+                raise LLMStageError(f"stage {stage}: {model} rate-limited") from e
             except (TransientError, ModelNotFound, ModelRejected) as e:
                 self.meta.warn(f"{stage}: model {model} failed ({type(e).__name__}: {str(e)[:200]}); trying next")
                 continue

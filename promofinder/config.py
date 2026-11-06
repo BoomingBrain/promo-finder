@@ -17,6 +17,8 @@ class ModelsConfig(BaseModel):
     timeout_s: float = 120
     max_retries: int = 3
     backoff_base_s: float = 2.0
+    rate_limit_retries: int = 10          # 429: wait and retry the same model (never downgrade)
+    rate_limit_backoff_max_s: float = 60.0
     max_tokens: int = 2048
     votes: int = 1
     vote_temperature: float = 0.7

@@ -106,3 +106,30 @@ def test_rejected_model_falls_back_to_next(tmp_path):
     from promofinder.llm import ModelRejected
     c, m, t = client(tmp_path, [ModelRejected("400"), '{"x": 3}'])
     assert c.complete_json("judge", Q, Out).x == 3 and m.counters["fallback_switches"] == 1
+
+
+def test_rate_limit_waits_on_same_model_instead_of_downgrading(tmp_path):
+    from promofinder.llm import RateLimited
+    script = [RateLimited("429")] * 6 + ['{"x": 4}']
+    c, m, t = client(tmp_path, script)
+    assert c.complete_json("judge", Q, Out).x == 4
+    assert set(t.calls) == {c.cfg.stages["judge"].models[0]} and m.counters.get("fallback_switches", 0) == 0
+    assert m.counters["rate_limit_waits"] == 6
+
+
+def test_rate_limit_exhausted_fails_loudly_without_downgrade(tmp_path):
+    from promofinder.llm import RateLimited
+    c, m, t = client(tmp_path, [RateLimited("429")] * 50)
+    with pytest.raises(LLMStageError):
+        c.complete_json("judge", Q, Out)
+    assert set(t.calls) == {c.cfg.stages["judge"].models[0]}
+    assert len(t.calls) == c.cfg.rate_limit_retries + 1
+
+
+def test_rate_limit_backoff_is_capped(tmp_path):
+    from promofinder.llm import RateLimited
+    m = RunMeta(); waits = []
+    cl = LLMClient(load_config(Path("config")).models, tmp_path, m, transport=fake([RateLimited("429")] * 8 + ['{"x": 1}']),
+                   sleep=waits.append)
+    cl.complete_json("judge", Q, Out)
+    assert max(waits) == cl.cfg.rate_limit_backoff_max_s       # 2,4,..,64 -> capped at 60
