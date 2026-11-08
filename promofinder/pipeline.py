@@ -6,6 +6,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from promofinder.bible import build_bible, render_context
 from promofinder.config import AppConfig, load_config
+from promofinder.dedupe import dedupe_finalists
 from promofinder.judge import judge_all
 from promofinder.meta import RunMeta
 from promofinder.models import Bible, Candidate, EpisodeTags, Judgement, Segment
@@ -214,7 +215,7 @@ def run(opts: RunOptions, client_factory=None) -> Path:
             _write_json(jpath, {k: v.model_dump() for k, v in judgements.items()})
 
     with meta.stage_timer("10_rank"):
-        promos = score_all(cands, judgements, tags, bible, cfg.scoring)
+        promos = score_all(cands, judgements, tags, bible, cfg.scoring, episodes)
         finals, rest = finalists(promos, cfg.scoring.finalists_n)
     if 8 in opts.stages and finals:
         with meta.stage_timer("8_refine"):
@@ -235,6 +236,11 @@ def run(opts: RunOptions, client_factory=None) -> Path:
                                                       "original": [x.model_dump() for x in p.original_segments] if p.original_segments else None}
                                 for p in finals})
     if 9 in opts.stages and len(finals) > 1:
+        with meta.stage_timer("9_dedupe"):
+            kept, dups = dedupe_finalists(finals, get_client(), cfg, meta)
+            if dups:                                   # refill the slate from the runners-up; duplicates go just after
+                finals, rest = kept + rest[:len(dups)], dups + rest[len(dups):]
+                _write_json(out / "dedupe.json", [{"cand_id": p.candidate.cand_id, "flags": p.flags} for p in dups])
         with meta.stage_timer("9_pairwise"):
             finals = rank_pairwise(finals, episodes, get_client(), cfg, meta)
             _write_json(out / "pairwise.json", [{"cand_id": p.candidate.cand_id, "elo": p.elo,

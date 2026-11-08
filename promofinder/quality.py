@@ -7,9 +7,10 @@ TALKY_RATIO = 0.8          # share of the clip covered by spoken lines
 LOW_STANDALONE = 6.0
 
 
-def _speech_ratio(p: Promo, episodes: dict[int, Episode]) -> float:
+def speech_ratio(c, episodes: dict[int, Episode]) -> float:
+    """Share of the clip covered by spoken lines (accepts a Candidate)."""
     total = spoken = 0.0
-    for s in p.candidate.segments:
+    for s in c.segments:
         total += s.duration_s
         ep = episodes.get(s.ep)
         if ep:
@@ -36,7 +37,7 @@ def risk_notes(p: Promo, above: list[Promo], episodes: dict[int, Episode]) -> li
             notes.append("spoiler risk")
         if "hook3s_low" in p.flags:
             notes.append("weak first 3 seconds")
-    if _speech_ratio(p, episodes) >= TALKY_RATIO:
+    if speech_ratio(c, episodes) >= TALKY_RATIO:
         notes.append("too talky: almost all dialogue, little action")
     for q in above:
         if any(overlap_ratio(a, b) > 0.0 for a in c.segments for b in q.candidate.segments) or q.candidate.scene_key == c.scene_key:

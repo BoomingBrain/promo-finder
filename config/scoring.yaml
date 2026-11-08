@@ -3,17 +3,17 @@ window: {min_s: 20.0, max_s: 60.0, sweet_min_s: 30.0, sweet_max_s: 45.0, hook_le
 window_weights: {hook: 0.4, cliff: 0.4, rules: 0.1, length_fit: 0.1}
 penalties: {mid_line_cut: 2.0, scene_jump: 1.0, camera_heavy: 1.0, camera_heavy_ratio: 0.4}
 nms_overlap: 0.5
-k_per_episode: 3
+k_per_episode: 5          # was 3; strong moments were crowded out
 judge_top_n: 100   # was 30; the cut was arbitrary under score inflation (ai-log #5)
 finalists_n: 15
 final_weights: {hook: 0.30, cliff: 0.30, standalone: 0.25, story_importance: 0.05, rules: 0.10}
-flags: {spoiler_major: 1.5, resolution_leak: 3.0, hook3s_low: 1.0}
+flags: {spoiler_major: 1.5, resolution_leak: 3.0, hook3s_low: 1.0, talky: 0.75}   # talky: >=80% of the clip is dialogue
 hook3s_min: 5
 early_episode: {max_ep: 10, bonus: 0.3}
 diversity: {top_k: 10, max_per_scene: 2, max_per_act: 3}
 quote_min_ratio: 0.8
 parse_fail_max_ratio: 0.05
 pairwise: {rounds: 4, k_factor: 32, start_rating: 1000, seed: 7}
-refine: {max_options: 6, max_shift_shots: 2}
+refine: {max_options: 8, max_shift_shots: 3}   # was 6 / 2: allow end-of-scene hold shots
 stitch: {top_hooks: 20, top_cliffs: 20, max_combos: 8, min_segment_s: 5.0}
 feedback: {min_marked: 10, max_nudge: 0.05, max_pos: 4, max_neg: 2}

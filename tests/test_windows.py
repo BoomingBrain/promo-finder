@@ -85,3 +85,20 @@ def test_build_never_emits_mid_line_cut():
         hb = next(b for b in ep.beats if b.beat_id == c.hook_beat_id); cb = next(b for b in ep.beats if b.beat_id == c.cliff_beat_id)
         s = c.segments[0]
         assert "mid_line_cut" not in check_clip_rules(ep, s.start_s, s.end_s, hb, cb, None, CFG.scoring.window)
+
+
+def _split_line_ep():
+    from promofinder.models import Beat, Episode
+    mk = lambda i, t, s, e, txt="x", sp=None: Beat(ep=8, beat_id=f"E08-B{i:03d}", idx=i, scene=1, type=t, speaker=sp, text=txt, start_s=s, end_s=e)
+    beats = [mk(1, "CAMERA", 0.0, 5.0), mk(2, "DIALOGUE", 1.0, 4.9, "I would rather choose my own life...", "J"),
+             mk(3, "CAMERA", 5.0, 40.0), mk(4, "DIALOGUE", 5.1, 8.0, "...than beg for yours.", "J"),
+             mk(5, "DIALOGUE", 30.0, 39.0, "You are disowned!", "M")]
+    return Episode(ep=8, logline="l", continuity_notes="c", duration_s=40.0, scenes=[], beats=beats, source_file="x")
+
+
+def test_clip_opening_on_second_half_of_a_sentence_is_rejected():
+    ep = _split_line_ep(); b = {x.beat_id: x for x in ep.beats}
+    assert "mid_sentence_open" in check_clip_rules(ep, 5.0, 40.0, b["E08-B004"], b["E08-B005"], None, CFG.scoring.window)
+    assert "mid_sentence_open" not in check_clip_rules(ep, 0.0, 40.0, b["E08-B002"], b["E08-B005"], None, CFG.scoring.window)
+    tags = EpisodeTags(ep=8, hooks=[H("E08-B004")], cliffhangers=[C("E08-B005")])
+    assert build_candidates(ep, tags, compute_signals(ep, CFG.signals), CFG.scoring) == []

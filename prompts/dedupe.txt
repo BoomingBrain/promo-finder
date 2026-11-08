@@ -1,0 +1,9 @@
+You curate a promo slate for a short vertical drama. Below are the top promo clips, best first. Each line is: number | episode | what happens first | what it ends on.
+
+$items
+
+Some shows repeat a beat across episodes (the same threat, the same cliffhanger, the same confrontation). A slate should never contain two clips that would feel like the same promo to a viewer.
+List every clip that repeats an EARLIER (better-ranked) clip's core moment. Different scenes that merely share characters are NOT duplicates.
+Reply with ONLY this JSON:
+{"duplicates": [{"keep": 1, "drop": 4, "why": "one line"}]}
+Use {"duplicates": []} if there are none.

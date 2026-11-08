@@ -43,7 +43,7 @@ class FinalWeights(BaseModel):
 
 
 class Flags(BaseModel):
-    spoiler_major: float; resolution_leak: float; hook3s_low: float
+    spoiler_major: float; resolution_leak: float; hook3s_low: float; talky: float = 0.75
 
 
 class EarlyEp(BaseModel):

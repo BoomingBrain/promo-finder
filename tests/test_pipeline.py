@@ -134,3 +134,11 @@ def test_feedback_csv_feeds_examples_to_tagger_and_judge(tmp_path):
     msgs = [str(m) for s, m, v, t in llm2.seen if s in ("tagger", "judge")]
     assert msgs and all("great slap open" in m for m in msgs)
     assert "F1" in gold.read_text()
+
+
+def test_dedupe_runs_before_pairwise(tmp_path):
+    llm = Routed([])
+    o = opts(tmp_path); o.stages = parse_stages("1-10")
+    run(o, client_factory=lambda *a: llm)
+    ded = [m for s, m, v, t in llm.seen if s == "pairwise" and "repeats an EARLIER" in str(m)]
+    assert len(ded) == 1

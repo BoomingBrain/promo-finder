@@ -44,3 +44,20 @@ def test_finalists_split():
     ps = [Promo(rank=i + 1, candidate=cand(i), judgement=None, final_score=1) for i in range(5)]
     a, b = finalists(ps, 3)
     assert len(a) == 3 and len(b) == 2
+
+
+def test_talky_clip_is_penalised():
+    from pathlib import Path as _P
+    from promofinder.models import Beat, Candidate, Episode, Judgement, Segment
+    from promofinder.rank import score_all
+    mk = lambda i, t, s, e: Beat(ep=1, beat_id=f"E01-B{i:03d}", idx=i, scene=1, type=t, speaker="A" if t == "DIALOGUE" else None,
+                                 text="t", start_s=s, end_s=e)
+    talky = Episode(ep=1, logline="l", continuity_notes="c", duration_s=30, scenes=[], source_file="x",
+                    beats=[mk(1, "CAMERA", 0, 30), mk(2, "DIALOGUE", 0, 29.5)])
+    c = Candidate(cand_id="T", kind="single", segments=[Segment(ep=1, start_s=0, end_s=30)], hook_beat_id="E01-B002",
+                  cliff_beat_id="E01-B002", hook_score=8, cliff_score=8, story_importance=5, rule_score=1, length_fit=10,
+                  penalties=0, window_score=8, scene_key="E01-S01")
+    j = {"T": Judgement(cand_id="T", standalone=7)}
+    plain = score_all([c], j, {}, None, CFG)[0]
+    pen = score_all([c], j, {}, None, CFG, episodes={1: talky})[0]
+    assert "talky" in pen.flags and pen.final_score == round(plain.final_score - CFG.flags.talky, 4)

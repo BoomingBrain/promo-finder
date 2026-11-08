@@ -9,6 +9,10 @@ Answer as that stranger:
 1. Who is this about, and what is at stake? If you cannot tell, the clip does not stand on its own.
 2. What question does the clip leave open at the end?
 3. Is anything confusing to a new viewer (unexplained names, references to earlier events)?
+4. Read ONLY the last few lines. Does the clip end at a moment of open tension (a threat, a danger, a question with no answer yet)?
+   Or does it end after the tension is released: a rescue completed, a victory, a calm exit, a reconciliation, a happy walk-off?
+   If the tension is released, set resolution_leak to true.
+5. Does the first spoken line make sense on its own, or is it the second half of a sentence? If it is a fragment, lower standalone.
 
 Then score and describe it. Reply with ONLY this JSON:
 {"standalone": 1-10 (10 = fully understandable with zero context),
@@ -17,4 +21,4 @@ Then score and describe it. Reply with ONLY this JSON:
  "cliffhanger_text": "the open question the clip ends on (one short line)",
  "why_it_works": "one line on why this would pull new viewers in (or why it would not)",
  "spoiler_risk": true/false (gives away a major twist),
- "resolution_leak": true/false (the clip answers its own question before it ends)}
+ "resolution_leak": true/false (true if the clip ends AFTER its tension is released; see question 4)}

@@ -51,6 +51,23 @@ def length_fit(d: float, w: WindowCfg) -> float:
     return 10.0 - 5.0 * (d - w.sweet_max_s) / (w.max_s - w.sweet_max_s)
 
 
+_CONT = ("...", "…")
+
+
+def opens_mid_sentence(ep: Episode, start: float, lead: float = 3.0) -> bool:
+    """True when the first spoken line of the clip is the second half of a split sentence
+    (it starts with an ellipsis, or the previous line ended with one and this one starts lower-case)."""
+    lines = [b for b in ep.beats if b.type == "DIALOGUE"]
+    first = next((b for b in lines if start - EPS <= b.start_s <= start + lead + EPS), None)
+    if first is None:
+        return False
+    t = first.text.strip().strip('"“”')
+    if t.startswith(_CONT):
+        return True
+    prev = [b for b in lines if b.end_s <= first.start_s + EPS and b.beat_id != first.beat_id]
+    return bool(prev) and prev[-1].text.strip().strip('"“”').endswith(_CONT) and t[:1].islower()
+
+
 def check_clip_rules(ep: Episode, start: float, end: float, hook: Beat, cliff: Beat,
                      resolved_start: float | None, w: WindowCfg) -> list[str]:
     v = []
@@ -65,6 +82,8 @@ def check_clip_rules(ep: Episode, start: float, end: float, hook: Beat, cliff: B
         v.append("resolution_inside")
     if end < cliff.end_s - 0.05:
         v.append("cliff_cut")
+    if opens_mid_sentence(ep, start, w.hook_lead_max_s):
+        v.append("mid_sentence_open")
     return v
 
 
@@ -117,7 +136,7 @@ def build_candidates(ep: Episode, tags: EpisodeTags, sig: dict[str, BeatSignals]
             rs = resolved_start_of(ep, c.resolved_by)
             start, end = snap_start(ep, hb, w.hook_lead_max_s), snap_end(ep, cb, rs)
             v = check_clip_rules(ep, start, end, hb, cb, rs, w)
-            if {"duration", "resolution_inside", "hook_lead", "mid_line_cut"} & set(v):
+            if {"duration", "resolution_inside", "hook_lead", "mid_line_cut", "mid_sentence_open"} & set(v):
                 continue                                   # hard edit rules (spec §5): never emit these
             p = 0.0
             if "mid_line_cut" in v:

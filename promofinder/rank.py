@@ -51,12 +51,15 @@ def diversify(promos: list[Promo], bible: Bible | None, cfg: ScoringConfig) -> l
 
 
 def score_all(cands: list[Candidate], judgements: dict[str, Judgement], tags: dict[int, EpisodeTags],
-              bible: Bible | None, cfg: ScoringConfig) -> list[Promo]:
+              bible: Bible | None, cfg: ScoringConfig, episodes: dict | None = None) -> list[Promo]:
+    from promofinder.quality import TALKY_RATIO, speech_ratio
     cliff_spoiler = {c.beat_id: c.spoiler_level for t in tags.values() for c in t.cliffhangers}
     promos = []
     for c in cands:
         j = judgements.get(c.cand_id)
         s, flags = final_score(c, j, cliff_spoiler.get(c.cliff_beat_id, "none"), cfg)
+        if episodes is not None and speech_ratio(c, episodes) >= TALKY_RATIO:
+            s -= cfg.flags.talky; flags.append("talky")
         promos.append(Promo(rank=0, candidate=c, judgement=j, final_score=round(s, 4), flags=flags))
     promos.sort(key=lambda p: -p.final_score)
     return diversify(promos, bible, cfg)
