@@ -9,6 +9,14 @@ from promofinder.pipeline import RunOptions, parse_stages, prepare_config, run
 from promofinder.readers.base import ReaderError
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _repo_path(rel: str) -> Path:
+    """Use ./rel when it exists (running from the repo), else the copy next to the package, so the CLI works from any folder."""
+    return Path(rel) if Path(rel).exists() else REPO_ROOT / rel
+
+
 def _models(pairs: list[str] | None) -> dict[str, str]:
     out = {}
     for p in pairs or []:
@@ -54,7 +62,7 @@ def build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("run", help="run the pipeline on a show folder")
     r.add_argument("--input", required=True, type=Path, help="folder of episode .txt screenplays")
     r.add_argument("--out", default=Path("outputs"), type=Path, help="output root (default: outputs)")
-    r.add_argument("--config", default=Path("config"), type=Path)
+    r.add_argument("--config", default=_repo_path("config"), type=Path)
     r.add_argument("--cache", default=Path("cache"), type=Path)
     r.add_argument("--reader", default="kuku_v1")
     r.add_argument("--stages", default="1-11", help="e.g. 1-11 or 1,2,4,5,7,10")
@@ -66,15 +74,15 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("--force", action="store_true", help="continue even if parse health check fails")
     e = sub.add_parser("eval", help="score a run against the gold set")
     e.add_argument("--run", required=True, type=Path, help="run output folder")
-    e.add_argument("--gold", default=Path("eval/gold.yaml"), type=Path)
+    e.add_argument("--gold", default=_repo_path("eval/gold.yaml"), type=Path)
     e.add_argument("--compare", type=Path, help="another run folder, for top-10 overlap")
-    e.add_argument("--config", default=Path("config"), type=Path)
+    e.add_argument("--config", default=_repo_path("config"), type=Path)
     x = sub.add_parser("experiment", help="solution-doc experiments: plan-a (naive timestamps), hindsight (context bias)")
     x.add_argument("which", choices=["plan-a", "hindsight"])
     x.add_argument("--input", required=True, type=Path)
     x.add_argument("--episodes", required=True, help="comma-separated episode numbers")
     x.add_argument("--out", default=Path("outputs"), type=Path)
-    x.add_argument("--config", default=Path("config"), type=Path)
+    x.add_argument("--config", default=_repo_path("config"), type=Path)
     x.add_argument("--cache", default=Path("cache"), type=Path)
     x.add_argument("--reader", default="kuku_v1")
     return ap

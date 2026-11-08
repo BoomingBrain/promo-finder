@@ -142,3 +142,11 @@ def test_dedupe_runs_before_pairwise(tmp_path):
     run(o, client_factory=lambda *a: llm)
     ded = [m for s, m, v, t in llm.seen if s == "pairwise" and "repeats an EARLIER" in str(m)]
     assert len(ded) == 1
+
+
+def test_cli_works_from_outside_the_repo(tmp_path, monkeypatch, capsys):
+    fixture = Path("tests/fixtures/show_a").resolve()
+    monkeypatch.chdir(tmp_path)                                  # no ./config here
+    monkeypatch.delenv("NVIDIA_API_KEY", raising=False)
+    monkeypatch.setattr("promofinder.cli.load_dotenv", lambda: None)
+    assert main(["run", "--input", str(fixture), "--out", str(tmp_path / "o"), "--dry-run"]) == 0
