@@ -4,6 +4,80 @@ Reads a microdrama show's timestamped screenplays and outputs a **ranked shortli
 
 **How it splits the work:** code parses the screenplay into numbered lines, builds every clip and produces every timestamp. LLMs only label lines *by ID*, judge clips *blind* (as a stranger would see them), pick between code-generated cut options and compare promos head-to-head. An editor makes the final call. Design: [`docs/superpowers/specs/2026-11-05-promo-finder-design.md`](docs/superpowers/specs/2026-11-05-promo-finder-design.md).
 
+## Architecture
+
+```mermaid
+flowchart TD
+    SRC[/"Show folder<br/>50 episode screenplays (.txt)"/]
+
+    subgraph S1["1 · Parse"]
+        P["readers/kuku_v1.py · parse.py<br/>every line → numbered beat<br/>E04-B017, type, speaker, start–end"]
+    end
+    subgraph S2["2 · Signals"]
+        SG["signals.py<br/>keyword / cue hints<br/>(gasp, slap, 'cliffhanger' swell)"]
+    end
+    subgraph S3["3 · Show summary"]
+        BI["bible.py · 1 call<br/>premise, characters, acts, reveals<br/>+ prev / next episode per episode"]
+    end
+    subgraph S4["4 · Tag beats"]
+        TG["tagger.py · 1 call / episode<br/>hooks + cliffhangers BY BEAT ID<br/>scored against calibration anchors"]
+        QC{"quote matches<br/>the script?"}
+        VT["voting.py<br/>majority vote (optional)"]
+    end
+    subgraph S5["5 · Build clips"]
+        WN["windows.py<br/>snap to camera shots · 20–60 s<br/>hook ≤ 3 s · no mid-line / mid-sentence cut<br/>never past the cliffhanger's answer"]
+    end
+    subgraph S6["6 · Stitch (experimental)"]
+        ST["stitcher.py<br/>AI proposes 2–3 segment combos<br/>code builds + validates them"]
+    end
+    subgraph S7["7 · Blind judge"]
+        JD["judge.py<br/>stranger test: clip TEXT only, no show context<br/>standalone · resolution leak · spoiler"]
+        H3["first-3-seconds test"]
+    end
+    subgraph S8["8 · Refine cuts"]
+        RF["refine.py<br/>code offers ±3-shot alternatives<br/>AI picks a letter"]
+    end
+    subgraph S9["9 · Slate"]
+        DD["dedupe.py<br/>drop clips repeating a better one"]
+        PW["pairwise.py<br/>'which would you post first?'<br/>both orders · Elo"]
+    end
+    subgraph S10["10 · Rank + report"]
+        RK["rank.py · quality.py · report.py<br/>final score, diversity, invariants<br/>'where it may be picking badly'"]
+    end
+    RES[/"report.md · promos.csv · promos.json<br/>run_meta.json (models, tokens, failures)"/]
+    ED(["Editor<br/>✓ / ✗ in promos.csv"])
+    EV["evaluate.py · eval<br/>recall@20 vs gold set<br/>precision@10 from ✓ / ✗"]
+    FB["feedback.py · stage 11<br/>examples + weight nudges<br/>→ next run"]
+
+    SRC --> P --> SG --> TG
+    P --> BI --> TG
+    TG --> QC
+    QC -- "no: rejected" --> X1["dropped + logged"]
+    QC -- yes --> VT --> WN
+    WN --> ST
+    WN --> JD
+    ST --> JD
+    JD --> H3 --> RK
+    RK -- "top 15" --> RF --> DD --> PW --> RES
+    RK --> RES
+    RES --> ED --> EV
+    ED --> FB -.-> TG
+    FB -.-> JD
+
+    classDef code fill:#e8f1fb,stroke:#3b7dd8,color:#0b2545
+    classDef ai fill:#fdf0e6,stroke:#d9822b,color:#3d1f00
+    classDef human fill:#e9f7ec,stroke:#2f9e44,color:#0b3d17
+    classDef io fill:#f4f4f5,stroke:#71717a,color:#18181b
+    class P,SG,QC,VT,WN,RK,EV,FB,X1 code
+    class BI,TG,ST,JD,H3,RF,DD,PW ai
+    class ED human
+    class SRC,RES io
+```
+
+**Colour key:** 🟦 code (deterministic: every timestamp and every rule) · 🟧 AI model call (labels beat IDs, judges, picks; never writes a timestamp) · 🟩 human editor · ⬜ files.
+
+Models are set per stage in `config/models.yaml`. Final run: Nemotron-3 Ultra for the summary and tagging, GLM-5.3-flash for judging, refinement, duplicate check and head-to-head. A rate limit makes the client wait and retry the same model; it never downgrades to a weaker one.
+
 ## Navigating the repo
 
 **Reading order for a first look (about 15 minutes):**
