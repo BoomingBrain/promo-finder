@@ -30,8 +30,8 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
   6. compares finalists head-to-head ("which would you post first?") with Elo
 - **Human:** the editor marks ✓/✗ in `promos.csv`. Those marks become prompt examples and small weight nudges, and they are scored separately from the gold set.
 - **Models:** any OpenAI-compatible endpoint works through `config/models.yaml`, with a fallback chain per stage.
-  - The final run uses NVIDIA's free `nemotron-3-ultra-550b-a55b` for the show summary and tagging.
-  - It uses `z-ai/glm-5.3-flash` for judging, the 3-second test, cut choice and head-to-head. GLM was chosen by a both-orders consistency test against DeepSeek and Mistral Large 4.
+  - Tagging uses NVIDIA's free `nemotron-3-ultra-550b-a55b`.
+  - `z-ai/glm-5.3-flash` is the preferred judge (chosen by a both-orders consistency test against DeepSeek and Mistral Large 4), but it was timing out on NVIDIA on the final day, so the final run is judged by Ultra with GLM as backup.
   - A rate limit waits and retries the same model; it never downgrades.
 
 ## 4. Scale and cost
@@ -63,8 +63,8 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
   - **Ranking, not finding, was the first bottleneck.** In the baseline, 9/12 gold moments were candidates but only 1 made the top 20. Calibration examples and judging every candidate took it to 3/12.
   - **Tagging is noisy.** The 3 votes agreed on only 50% of tagged moments, partly because a third of the votes came from the small fallback model. Majority voting then *shrank* the pool (6/12 gold moments vs 8/12 with 1 vote), so 3 votes did not beat 1 vote on recall, and the final run uses 1.
   - **Model choice matters more than model size.** In earlier runs the head-to-head stage looked useless: it picked the first-shown clip 86–93% of the time.
-    - The real cause was rate limits quietly pushing half the calls onto a small backup model.
-    - With the client fixed to wait instead of downgrading, and GLM-5.3-flash judging, it agreed with itself 79% of the time with no position bias.
+    - Rate limits were quietly pushing up to half the calls onto a small backup model (fixed: wait, never downgrade). But that was not the whole story: Ultra on its own also picked the first-shown clip 89% of the time at full scale.
+    - The judge model was the real lever: with GLM-5.3-flash judging, head-to-head agreed with itself 79% of the time with no position bias.
     - In a 10-pair test the 1T-parameter Mistral Large 4 was *worse* (5/10) than the 'flash' GLM (9/10).
   - **Cuts that are close but too long.** G02 and G10 are covered at 45–48%: the tool's clip starts or ends a few shots away from the editor's, so it falls just short of the 50% rule.
   - **Editor review of the final top 10 (5 ✓ / 5 ✗).** The misses fall into the spec's categories:
@@ -75,7 +75,8 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
     - **Near-duplicate across episodes:** #6 repeats #5's exact cliffhanger, the branding iron at her eye, one episode later. The duplicate check only works within a scene.
     - **Too talky:** in #3 (legal exposition) and #9 (coded negotiation), most of the clip is dialogue a stranger can't decode.
     - **Even the ✓ picks often need a small trim:** #2's middle sags, and #5 should hold 5 s longer on the eye shot.
- 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
+  - **After the slate fixes (final run):** three of the five misses left the top 10 (the talky legal clip, the duplicate branding iron, the mid-sentence opening), and gold picks ranked higher (#1, #3, #6). Three new misses replaced them: a clip that plays on past its own resolution (#2), a static monologue under the 80% talky threshold (#5), and a cut one beat before the payoff line (#8). Precision@10 stayed 5/10: each fixed failure mode exposed the next one.
+  - **Visual-only hooks.** 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
   - **Missed scenes.** Some strong moments never became candidates at all (G03, G04, G06). With only 3 clips per episode, a talky set-up beat can crowd them out.
 
 ## 6. AI tools and where they got it wrong (~5 lines)
@@ -89,6 +90,6 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
   - Claude Code itself wrote a clip builder that let a mid-line cut through (ai-log #10), and a hindsight metric that counted "not picked" as a score of 0 (ai-log #9).
 
 ## 7. Links
-- Repo: https://github.com/BoomingBrain/promo-finder (currently private; make it public or invite the reviewers before submitting)
-- Raw outputs: ⟨anyone-with-link Google Drive folder⟩, a zip of `outputs/<show-slug>/` (it quotes the script, so it is never committed)
+- Repo: https://github.com/BoomingBrain/promo-finder (make it public before submitting)
+- Raw outputs: ⟨anyone-with-link Google Drive folder⟩: the `promo-finder-raw-outputs/` folder (final run, experiments, earlier runs; it quotes the script, so it is never committed)
 - Optional video: ⟨link⟩
