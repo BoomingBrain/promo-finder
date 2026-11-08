@@ -2,7 +2,7 @@
 
 Tools used: Claude Code (design + implementation), NVIDIA API catalogue models (tagging, judging, ranking — exact models per run are recorded in each `run_meta.json`).
 
-Raw outputs that quote the screenplay live in the Google Drive raw-outputs folder, never in this repo.
+Raw outputs that quote the screenplay live in the Google Drive raw-outputs folder (https://drive.google.com/file/d/1y_e3tdbf_rGqk1sPh0CZMDFLUBFimQL2/view?usp=sharing), never in this repo.
 
 | # | Tool | What I asked | What it did wrong | How I caught it | What I changed |
 |---|---|---|---|---|---|

@@ -90,6 +90,5 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
   - Claude Code itself wrote a clip builder that let a mid-line cut through (ai-log #10), and a hindsight metric that counted "not picked" as a score of 0 (ai-log #9).
 
 ## 7. Links
-- Repo: https://github.com/BoomingBrain/promo-finder (make it public before submitting)
-- Raw outputs: ⟨anyone-with-link Google Drive folder⟩: the `promo-finder-raw-outputs/` folder (final run, experiments, earlier runs; it quotes the script, so it is never committed)
-- Optional video: ⟨link⟩
+- Repo: https://github.com/BoomingBrain/promo-finder
+- Raw outputs: https://drive.google.com/file/d/1y_e3tdbf_rGqk1sPh0CZMDFLUBFimQL2/view?usp=sharing (the `promo-finder-raw-outputs/` folder: final run, experiments, earlier runs; it quotes the script, so it is never committed)

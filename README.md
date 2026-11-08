@@ -1,5 +1,7 @@
 # Promo Finder
 
+**Links:** [raw outputs from the full 50-episode input pack (Google Drive)](https://drive.google.com/file/d/1y_e3tdbf_rGqk1sPh0CZMDFLUBFimQL2/view?usp=sharing) · [solution notes](docs/solution-doc-outline.md) · [AI log](docs/ai-log.md)
+
 Reads a microdrama show's timestamped screenplays and outputs a **ranked shortlist of 20–60 s promo clips**: the episode(s) and exact start/end of every segment, the hook, the cliffhanger, why it works, and an honest list of where it is likely picking badly.
 
 **How it splits the work:** code parses the screenplay into numbered lines, builds every clip and produces every timestamp. LLMs only label lines *by ID*, judge clips *blind* (as a stranger would see them), pick between code-generated cut options and compare promos head-to-head. An editor makes the final call. Design: [`docs/superpowers/specs/2026-11-05-promo-finder-design.md`](docs/superpowers/specs/2026-11-05-promo-finder-design.md).
@@ -206,7 +208,7 @@ Runs **resume**: every stage saves its output under `outputs/<show-slug>/` and i
 
 ## Confidentiality
 
-The input screenplays, `outputs/` and `cache/` are **never committed** (`.gitignore`). Outputs quote the script; share them privately (the submission's raw-outputs Drive folder). Test fixtures are synthetic.
+The input screenplays, `outputs/` and `cache/` are **never committed** (`.gitignore`). Outputs quote the script, so they are shared privately: [raw outputs on Google Drive](https://drive.google.com/file/d/1y_e3tdbf_rGqk1sPh0CZMDFLUBFimQL2/view?usp=sharing) (final run, experiments and earlier runs; anyone with the link). Test fixtures are synthetic.
 
 ## Tests
 
