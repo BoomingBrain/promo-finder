@@ -42,7 +42,7 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 - **3-vote run** (all 10 stages): 427 calls (324 live), about 1.86M tokens, 41 min 42 s wall time.
   - The free tier struggled at 3× volume: 36 of 150 tagging calls failed outright, 84 calls fell back to the second model and 95 replies needed a JSON retry.
   - Token use was about 2× the dry-run estimate because of the retries.
-- **Final run** (1 vote, all 10 stages): 307 calls (255 live), about 401k tokens, 48 min 51 s wall time.
+- **GLM-judged run** (1 vote, all 10 stages): 307 calls (255 live), about 401k tokens, 48 min 51 s wall time.
   - 0 failed calls and 1 rate-limit wait.
   - Judging is the slow part: GLM took about 37 min for 94 clips.
 - **Per new show:** the same command runs unchanged, it resumes after a crash, and responses are cached.
@@ -56,7 +56,8 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 | M2 (+ show summary, calibration examples, judge all) | **3/12** | 8/12 | 98.9% | 1 mid-line cut found → bug fixed (ai-log #10) |
 | M3 (+ stitch, refine, debiased pairwise, cut fix) | **3/12** | 8/12 | 100% | branding-iron pick reached #1; pairwise agreed with itself 21% |
 | 3 votes, all stages (mixed models under rate limits) | **3/12** (#1, #5, #9) | 6/12 | 100% | vote agreement 50%; pairwise agreed with itself 14–25%; the small fallback model answered 37–50% of calls |
-| **Final: 1 vote, Ultra tags, GLM-5.3-flash judges, no downgrade on 429** | **4/12** (#1, #5, #8, #20) | 8/12 | 100% | pairwise agreed with itself **79%**, first-shown won 39%; 0 failed calls; precision@10 **5/10** (editor marks AI-drafted, pending user review) |
+| 1 vote, Ultra tags, GLM-5.3-flash judges, no downgrade on 429 | **4/12** (#1, #5, #8, #20) | 8/12 | 100% | pairwise agreed with itself **79%**, first-shown won 39%; 0 failed calls; precision@10 **5/10** (editor marks AI-drafted, user-reviewed) |
+| **Final: + slate fixes (mid-sentence rule, talky penalty, duplicate check, wider refine); Ultra judges because GLM was timing out** | **4/12** (#1, #3, #6, #16) | 8/12 | 100% | precision@10 **5/10** (AI-drafted marks, user-reviewed): 3 old misses gone, 3 new ones; pairwise back to 21% consistent with Ultra judging; 305 calls, about 233k tokens, 11 min |
 
 - **Where it fails:** this comes from real evidence, not guesses. `report.md` now flags these automatically for the top 20.
   - **Ranking, not finding, was the first bottleneck.** In the baseline, 9/12 gold moments were candidates but only 1 made the top 20. Calibration examples and judging every candidate took it to 3/12.
