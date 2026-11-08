@@ -56,7 +56,7 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
 | M2 (+ show summary, calibration examples, judge all) | **3/12** | 8/12 | 98.9% | 1 mid-line cut found → bug fixed (ai-log #10) |
 | M3 (+ stitch, refine, debiased pairwise, cut fix) | **3/12** | 8/12 | 100% | branding-iron pick reached #1; pairwise agreed with itself 21% |
 | 3 votes, all stages (mixed models under rate limits) | **3/12** (#1, #5, #9) | 6/12 | 100% | vote agreement 50%; pairwise agreed with itself 14–25%; the small fallback model answered 37–50% of calls |
-| **Final: 1 vote, Ultra tags, GLM-5.3-flash judges, no downgrade on 429** | **4/12** (#1, #5, #8, #20) | 8/12 | 100% | pairwise agreed with itself **79%**, first-shown won 39%; 0 failed calls; precision@10 from editor ✓/✗: ⟨PENDING: user marks⟩ |
+| **Final: 1 vote, Ultra tags, GLM-5.3-flash judges, no downgrade on 429** | **4/12** (#1, #5, #8, #20) | 8/12 | 100% | pairwise agreed with itself **79%**, first-shown won 39%; 0 failed calls; precision@10 **5/10** (editor marks AI-drafted, pending user review) |
 
 - **Where it fails:** this comes from real evidence, not guesses. `report.md` now flags these automatically for the top 20.
   - **Ranking, not finding, was the first bottleneck.** In the baseline, 9/12 gold moments were candidates but only 1 made the top 20. Calibration examples and judging every candidate took it to 3/12.
@@ -66,7 +66,15 @@ Problem 1 is about finding the best 20–60 s promos in a 50-episode microdrama 
     - With the client fixed to wait instead of downgrading, and GLM-5.3-flash judging, it agreed with itself 79% of the time with no position bias.
     - In a 10-pair test the 1T-parameter Mistral Large 4 was *worse* (5/10) than the 'flash' GLM (9/10).
   - **Cuts that are close but too long.** G02 and G10 are covered at 45–48%: the tool's clip starts or ends a few shots away from the editor's, so it falls just short of the 50% rule.
-  - **Visual-only hooks.** 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
+  - **Editor review of the final top 10 (5 ✓ / 5 ✗).** The misses fall into the spec's categories:
+    - **Rule gaps the code could catch:**
+      - #10 opens on the second half of a sentence: the previous beat ends with "...", a split line.
+      - #10 also ends on a triumphant exit, which resolves the scene instead of leaving a cliffhanger.
+      - #8 drops the setup that tells a stranger she is condemned, so its cliffhanger reads as ambiguous.
+    - **Near-duplicate across episodes:** #6 repeats #5's exact cliffhanger, the branding iron at her eye, one episode later. The duplicate check only works within a scene.
+    - **Too talky:** in #3 (legal exposition) and #9 (coded negotiation), most of the clip is dialogue a stranger can't decode.
+    - **Even the ✓ picks often need a small trim:** #2's middle sags, and #5 should hold 5 s longer on the eye shot.
+ 7 of the final top 20 open on an action or camera beat, so text-only judging may misread them. They are flagged for the editor.
   - **Missed scenes.** Some strong moments never became candidates at all (G03, G04, G06). With only 3 clips per episode, a talky set-up beat can crowd them out.
 
 ## 6. AI tools and where they got it wrong (~5 lines)
